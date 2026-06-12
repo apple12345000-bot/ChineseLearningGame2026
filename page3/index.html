@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏰 陣營領地戰 - 生字英雄傳</title>
+<script src="https://cdn.jsdelivr.net/npm/cnchar/cnchar.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cnchar-trad/cnchar.trad.min.js"></script>
+
+<style>
+    :root { 
+        --bg-color: #1a1a2e; 
+        --panel-bg: #16213e;
+        --faction-A: #e74c3c; /* 紅軍 */
+        --faction-B: #3498db; /* 藍軍 */
+        --faction-C: #2ecc71; /* 綠軍 */
+        --faction-D: #f1c40f; /* 黃軍 */
+        --gold: #f39c12;
+        --text-light: #e0e0e0;
+    }
+    
+    body { font-family: 'Microsoft JhengHei', sans-serif; background: var(--bg-color); color: var(--text-light); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+    h1 { color: var(--gold); margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); text-align: center; letter-spacing: 2px; }
+    
+    /* Setup Screen */
+    #setup-screen { background: var(--panel-bg); padding: 25px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); border: 2px solid #2a3a5a; max-width: 950px; width: 100%; color: #fff; box-sizing: border-box; }
+    
+    .setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+    .setup-group { border: 1px solid #3a4a6a; border-radius: 10px; padding: 15px; background: rgba(0,0,0,0.2); height: 100%; box-sizing: border-box; }
+    .setup-title { font-size: 1.2em; font-weight: bold; color: var(--gold); margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid #3a4a6a; padding-bottom: 8px; text-shadow: 1px 1px 2px #000; }
+    
+    .player-setup-area { max-height: 320px; overflow-y: auto; padding-right: 10px; }
+    .player-input-group { display: flex; align-items: center; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid #445; transition: 0.3s; }
+    .player-input-group label { font-weight: bold; font-size: 0.9em; min-width: 50px; color: #aaa; }
+    .player-input-group input[type="text"] { flex-grow: 1; min-width: 90px; padding: 6px; border: 1px solid #556; border-radius: 4px; background: #223; color: white; }
+    .player-input-group select { padding: 6px; border-radius: 4px; border: 1px solid #556; background: #223; color: white; font-size: 15px; }
+    
+    .faction-select { font-weight: bold; }
+    .faction-select.A { color: var(--faction-A); }
+    .faction-select.B { color: var(--faction-B); }
+    .faction-select.C { color: var(--faction-C); }
+    .faction-select.D { color: var(--faction-D); }
+    
+    .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 0.95em; flex-wrap: wrap; gap: 10px; }
+    .setting-row input[type="number"], .setting-row input[type="text"], .setting-row select { padding: 8px; border-radius: 4px; border: 1px solid #556; background: #223; color: white; font-size: 15px; }
+    
+    .info-box { background: rgba(15, 52, 96, 0.4); border-left: 4px solid #3498db; padding: 12px; font-size: 0.9em; margin-top: 15px; border-radius: 0 5px 5px 0; line-height: 1.6; grid-column: span 2; }
+    .quick-tags { display: flex; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+    .tag-btn { background: #223; border: 1px solid #556; color: #bbb; padding: 4px 10px; border-radius: 4px; font-size: 13px; cursor: pointer; transition: 0.2s;}
+    .tag-btn:hover { background: #334; color: #fff; border-color: #3498db; }
+
+    .btn { background: linear-gradient(135deg, #2980b9, #2c3e50); color: white; border: 1px solid #3498db; padding: 10px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; margin: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.4); filter: brightness(1.2); }
+    .btn:active { transform: translateY(1px); }
+    .btn:disabled { background: #555; border-color: #444; cursor: not-allowed; }
+    .btn-secondary { background: linear-gradient(135deg, #34495e, #2c3e50); border-color: #5d6d7e; }
+    .btn-start { background: linear-gradient(135deg, #d35400, #c0392b); border-color: #e67e22; width: 100%; font-size: 20px; padding: 15px; margin-top: 20px; letter-spacing: 2px;}
+
+    /* Game Screen */
+    #game-screen { display: none; width: 100%; max-width: 1200px; flex-direction: column; align-items: center; padding-bottom: 100px; }
+    
+    /* Scoreboard */
+    #scoreboard-panel { width: 100%; background: #111827; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 8px 25px rgba(0,0,0,0.6); border: 2px solid #374151; box-sizing: border-box; }
+    .score-header { display: flex; justify-content: space-around; font-size: 1.3em; font-weight: bold; margin-bottom: 12px; flex-wrap: wrap; gap: 15px; }
+    
+    .vs-bar-container { width: 100%; height: 35px; background: #333; border-radius: 20px; overflow: hidden; display: flex; border: 2px solid #555; position: relative; }
+    .vs-center-mark { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.3); z-index: 10; transform: translateX(-50%); }
+
+    /* Stats Panel */
+    .stats-panel { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; width: 100%; margin-bottom: 20px; }
+    .player-card { background: #1f2937; padding: 12px; border-radius: 12px; border: 2px solid #374151; transition: 0.3s; position: relative; }
+    .player-card.active { transform: translateY(-5px); border-color: var(--gold); box-shadow: 0 0 15px rgba(243, 156, 18, 0.5); background: #374151; }
+    .player-card.faction-A { border-top: 4px solid var(--faction-A); }
+    .player-card.faction-B { border-top: 4px solid var(--faction-B); }
+    .player-card.faction-C { border-top: 4px solid var(--faction-C); }
+    .player-card.faction-D { border-top: 4px solid var(--faction-D); }
+    
+    .player-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; border-bottom: 1px solid #4b5563; padding-bottom: 5px; }
+    .player-avatar-disp { font-size: 24px; background: rgba(0,0,0,0.3); border-radius: 50%; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; }
+    .stat-row { font-size: 14px; margin: 6px 0; color: #d1d5db; display: flex; justify-content: space-between; align-items: center; }
+    .stat-val { font-weight: bold; color: white; font-size: 16px; }
+
+    /* Board */
+    .board-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px; width: 100%; padding: 20px; background: #111827; border-radius: 15px; border: 2px solid #374151; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); box-sizing: border-box; }
+    
+    .cell { background: #1f2937; aspect-ratio: 1; border-radius: 12px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; border: 3px solid #4b5563; transition: all 0.3s ease; color: #eee; }
+    
+    /* Faction Ownership Styling */
+    .cell.owned-A { background: rgba(231, 76, 60, 0.15); border-color: var(--faction-A); box-shadow: inset 0 0 15px rgba(231, 76, 60, 0.2); }
+    .cell.owned-B { background: rgba(52, 152, 219, 0.15); border-color: var(--faction-B); box-shadow: inset 0 0 15px rgba(52, 152, 219, 0.2); }
+    .cell.owned-C { background: rgba(46, 204, 113, 0.15); border-color: var(--faction-C); box-shadow: inset 0 0 15px rgba(46, 204, 113, 0.2); }
+    .cell.owned-D { background: rgba(241, 196, 15, 0.15); border-color: var(--faction-D); box-shadow: inset 0 0 15px rgba(241, 196, 15, 0.2); }
+    
+    .cell.special-chance { background: rgba(155, 89, 182, 0.2); border-color: #9b59b6; }
+    .cell.start { background: rgba(46, 204, 113, 0.2); border-color: #2ecc71; }
+    
+    .cell-strokes { font-size: 11px; color: #9ca3af; position: absolute; top: 4px; right: 6px; background: rgba(0,0,0,0.6); padding: 2px 5px; border-radius: 4px; }
+    .cell-content { z-index: 2; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+    
+    /* Level Indicators (Castles) */
+    .level-container { position: absolute; bottom: 4px; left: 0; width: 100%; display: flex; justify-content: center; gap: 2px; z-index: 1; }
+    .level-icon { font-size: 10px; opacity: 0; transform: translateY(5px); transition: 0.3s; }
+    .cell.level-1 .level-icon:nth-child(1) { opacity: 1; transform: translateY(0); }
+    .cell.level-2 .level-icon:nth-child(1), .cell.level-2 .level-icon:nth-child(2) { opacity: 1; transform: translateY(0); }
+    .cell.level-3 .level-icon { opacity: 1; transform: translateY(0); }
+
+    .tokens-container { position: absolute; top: -10px; left: -10px; right: -10px; display: flex; gap: 2px; flex-wrap: wrap; z-index: 3; pointer-events: none; justify-content: center; }
+    .token { width: 26px; height: 26px; border-radius: 50%; display:flex; justify-content:center; align-items:center; font-size:16px; box-shadow: 0 4px 8px rgba(0,0,0,0.6); background: #333; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 10; }
+    .token.faction-A { border: 2px solid #ff7675; background: #d63031; }
+    .token.faction-B { border: 2px solid #74b9ff; background: #0984e3; }
+    .token.faction-C { border: 2px solid #55efc4; background: #2ecc71; }
+    .token.faction-D { border: 2px solid #ffeaa7; background: #f1c40f; }
+
+    /* Controls & Modals */
+    .controls { position: fixed; bottom: 20px; background: rgba(31, 41, 55, 0.95); padding: 15px 30px; border-radius: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 2px solid #4b5563; display: flex; gap: 20px; align-items: center; z-index: 100; backdrop-filter: blur(5px); }
+    #dice-display { font-size: 36px; font-weight: bold; width: 45px; text-align: center; color: var(--gold); }
+    
+    #message-log { position: fixed; top: 40px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); border: 2px solid var(--gold); color: #fff; padding: 15px 30px; border-radius: 10px; z-index: 200; display: none; text-align: center; font-size: 18px; font-weight: bold; box-shadow: 0 0 20px rgba(243,156,18,0.3); }
+    
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+    .modal { background: #1f2937; padding: 30px; border-radius: 15px; text-align: center; max-width: 450px; width: 90%; box-shadow: 0 0 30px rgba(0,0,0,0.8); border: 2px solid #4b5563; color: white; }
+    .modal-title { margin-top: 0; font-size: 1.6em; border-bottom: 1px solid #4b5563; padding-bottom: 15px; }
+    .modal-char { font-size: 65px; display: block; margin: 15px 0; font-weight: bold; text-shadow: 0 0 15px rgba(255,255,255,0.3); }
+    
+    .action-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
+    .badge-neutral { background: #7f8c8d; color: white; }
+    .badge-upgrade { background: #2ecc71; color: white; }
+    .badge-attack { background: #e74c3c; color: white; }
+
+</style>
+</head>
+<body>
+
+    <h1>🏰 陣營領地戰 - 生字英雄傳</h1>
+
+    <div id="setup-screen">
+        <div class="setup-grid">
+            <div class="setup-group">
+                <div class="setup-title">⚔️ 1. 陣營與指揮官編制</div>
+                <div class="setting-row">
+                    <label>參戰陣營數：
+                        <select id="faction-count" onchange="generatePlayerInputs()">
+                            <option value="2" selected>雙雄對決 (紅、藍)</option>
+                            <option value="3">三足鼎立 (紅、藍、綠)</option>
+                            <option value="4">四國群雄 (紅、藍、綠、黃)</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <label>總參戰人數：
+                        <select id="player-count" style="width:100px;" onchange="generatePlayerInputs()">
+                            <option value="2">2 人</option>
+                            <option value="3">3 人</option>
+                            <option value="4" selected>4 人</option>
+                            <option value="6">6 人</option>
+                            <option value="8">8 人</option>
+                        </select>
+                    </label>
+                </div>
+                <div id="player-names-container" class="player-setup-area" style="margin-top: 15px;"></div>
+            </div>
+
+            <div class="setup-group">
+                <div class="setup-title">📜 2. 戰場高級設定</div>
+                <div class="setting-row" style="width: 100%;">
+                    <label style="width: 100%;">輸入戰場節點 (本課生字)：
+                        <input type="text" id="word-input" placeholder="請輸入本課生字，例如：員社教導演..." style="width:100%; box-sizing: border-box; margin-top:5px;">
+                    </label>
+                    <div class="quick-tags">
+                        <span style="font-size:12px; color:#aaa; align-self:center;">範例：</span>
+                        <button type="button" class="tag-btn" onclick="fillExample('智慧科技創新繁榮')">科技類</button>
+                        <button type="button" class="tag-btn" onclick="fillExample('英雄傳奇盛宴乾坤')">古典類</button>
+                        <button type="button" class="tag-btn" onclick="fillExample('山高水長風光明媚')">自然類</button>
+                    </div>
+                </div>
+
+                <div class="setting-row" style="margin-top: 10px; border-top: 1px dashed #4b5563; padding-top: 10px;">
+                    <label style="color: var(--gold); font-weight: bold;">🌟 遊戲難度預設：
+                        <select id="game-difficulty" style="width:180px; margin-left: 10px;" onchange="applyDifficulty()">
+                            <option value="easy">🟢 簡單 (高AP / 15圈)</option>
+                            <option value="normal" selected>🟡 普通 (標準 / 20圈)</option>
+                            <option value="hard">🔴 困難 (低AP / 25圈)</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="setting-row">
+                    <label>初始行動力 (AP)：<input type="number" id="initial-ap" value="10" min="5" max="30" style="width:60px;"> 點</label>
+                    <label>回合圈數限制：<input type="number" id="max-turns" value="20" min="5" max="50" style="width:60px;"> 圈</label>
+                </div>
+                <div class="setting-row">
+                    <label>地圖事件格數量：<input type="number" id="chance-count" value="4" min="0" max="10" style="width:60px;"></label>
+                    <label>過營地補給 AP：<input type="number" id="camp-ap-recovery" value="2" min="0" max="5" style="width:60px;"> 點</label>
+                </div>
+                <div class="setting-row">
+                    <label>生字挑戰難度：
+                        <select id="challenge-mode">
+                            <option value="vocab" selected>基礎造詞 (大聲唸出詞語)</option>
+                            <option value="idiom">進階成語 (含該字的四字成語)</option>
+                            <option value="sentence">創意造句 (包含該字的完整句子)</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <label>命運格牌組類型：
+                        <select id="event-deck-type">
+                            <option value="balanced" selected>平衡命運 (有獎有懲)</option>
+                            <option value="blessing">恩賜獎勵 (偏向獲得資源)</option>
+                            <option value="hardcore">嚴酷考驗 (考驗戰略應變)</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <b>🎯 領地戰核心規則：</b><br>
+            1. <b>佔領空地：</b> 抵達無人格子，依難度完成生字考驗即可佔領 (等級 1)。<br>
+            2. <b>升級領地：</b> 抵達我方領地，挑戰成功可使防禦工事升級 (最高等級 3)。等級越高，領地積分倍數越高。<br>
+            3. <b>攻擊敵軍：</b> 抵達敵方領地，挑戰成功可<b>降低其 1 個等級</b>。若降至 0 則該領地收回變回空地。<br>
+            <b>🏆 勝利條件：</b> 當所有人行動力（AP）耗盡或指定的回合圈數結束時，<b>陣營總積分</b> (各領地生字筆畫數 × 領地等級) 較高之陣營獲勝！
+        </div>
+
+        <button class="btn btn-start" onclick="prepareGame()">⚔️ 創建戰場，開戰！ ⚔️</button>
+    </div>
+
+    <div id="game-screen">
+        
+        <div id="scoreboard-panel">
+            <div class="score-header" id="score-header-container">
+                </div>
+            <div class="vs-bar-container" id="vs-bar-container">
+                <div class="vs-center-mark"></div>
+            </div>
+            <div style="text-align: center; margin-top: 10px; color: #9ca3af; font-size: 14px;">
+                戰局剩餘圈數：<span id="turns-left-disp" style="color: white; font-weight: bold;">--</span> 圈
+            </div>
+        </div>
+
+        <div class="stats-panel" id="stats-panel"></div>
+        <div class="board-container" id="board"></div>
+        
+        <div class="controls">
+            <div id="turn-indicator" style="font-weight: bold; color: #fff; font-size: 1.2em; min-width: 180px;">準備中...</div>
+            <button class="btn" id="roll-btn" onclick="rollDice()" style="font-size: 18px; padding: 12px 25px;">🎲 投擲行動骰</button>
+            <span id="dice-display">?</span>
+        </div>
+    </div>
+
+    <div id="message-log">訊息提示</div>
+
+    <div class="modal-overlay" id="action-modal">
+        <div class="modal">
+            <div id="modal-badge" class="action-badge badge-neutral">佔領空地</div>
+            <h2 class="modal-title" id="action-title">發動領地宣稱</h2>
+            <span class="modal-char" id="modal-char" style="color: var(--gold);">字</span>
+            <p id="modal-desc" style="font-size: 18px; font-weight: bold; color: #fff;">任務挑戰</p>
+            <p id="modal-cost-info" style="color: #9ca3af; font-size: 14px;">(此行動將消耗 1 點 AP)</p>
+            
+            <div style="margin-top: 25px; display: flex; gap: 10px; justify-content: center;">
+                <button class="btn" id="btn-confirm-action" style="flex:1; font-size:18px;" onclick="confirmAction(true)">💥 成功完成挑戰！</button>
+                <button class="btn btn-secondary" style="flex:0.8;" onclick="confirmAction(false)">🛡️ 放棄行動</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="event-modal">
+        <div class="modal">
+            <h2 class="modal-title" style="color: #9b59b6;">❓ 命運事件</h2>
+            <div id="event-desc" style="font-size: 18px; margin: 20px 0; line-height: 1.6; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; white-space: pre-wrap;">卡片內容</div>
+            <button class="btn" style="width: 100%;" onclick="resolveEvent()">確認接受</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="end-modal">
+        <div class="modal" style="max-width: 600px;">
+            <h2 class="modal-title" id="end-title" style="font-size: 2.2em;">🏆 戰役結算</h2>
+            <div id="winner-display" style="text-align: center; margin: 20px 0; font-size: 22px; font-weight: bold;"></div>
+            
+            <div id="end-scores-container" style="display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                </div>
+
+            <button class="btn" style="width:100%; font-size: 18px;" onclick="location.reload()">🔄 開啟新戰局</button>
+        </div>
+    </div>
+
+<script>
+    // 豐富的英雄圖騰選單
+    const AVATARS = ['🧑‍🎤', '🥷', '🧙‍♂️', '🧝‍♀️', '🦁', '🦊', '🦉', '🦄', '🤖', '🦹‍♂️', '🐼', '🐲', '👻', '🤠', '👽', '🦖'];
+    
+    // 多陣營設定
+    const FACTIONS = {
+        'A': { id: 'A', name: '紅軍', color: 'var(--faction-A)', icon: '🔴', gradient: 'linear-gradient(90deg, #c0392b, #e74c3c)' },
+        'B': { id: 'B', name: '藍軍', color: 'var(--faction-B)', icon: '🔵', gradient: 'linear-gradient(90deg, #2980b9, #3498db)' },
+        'C': { id: 'C', name: '綠軍', color: 'var(--faction-C)', icon: '🟢', gradient: 'linear-gradient(90deg, #27ae60, #2ecc71)' },
+        'D': { id: 'D', name: '黃軍', color: 'var(--faction-D)', icon: '🟡', gradient: 'linear-gradient(90deg, #d35400, #f1c40f)' }
+    };
+
+    // 龐大的命運牌組
+    const ALL_EVENT_CARDS = [
+        { text: "🎒 找到遺失的軍需物資！\n\n獲得 2 點 AP！", type: "blessing", effect: (p) => { p.ap += 2; } },
+        { text: "👑 國王的恩賜！\n\n重獲前線補給，獲得 3 點 AP！", type: "blessing", effect: (p) => { p.ap += 3; } },
+        { text: "🎯 狙擊敵方補給線！\n\n隨機扣除一名非我方陣營成員 2 點 AP！", type: "balanced", effect: (p) => { 
+            let enemies = players.filter(ep => ep.faction !== p.faction && ep.ap > 0);
+            if(enemies.length > 0) {
+                let target = enemies[Math.floor(Math.random() * enemies.length)];
+                target.ap = Math.max(0, target.ap - 2);
+                showMsg(`💥 ${target.name} 遭到狙擊，失去 2 點 AP！`);
+            }
+        }},
+        { text: "🌪️ 遭遇突發沙塵暴！\n\n作戰環境惡劣，失去 1 點 AP！", type: "hardcore", effect: (p) => { p.ap = Math.max(0, p.ap - 1); } },
+        { text: "📉 遭遇突襲合圍！\n\n大意失荊州，直接失去 2 點 AP！", type: "hardcore", effect: (p) => { p.ap = Math.max(0, p.ap - 2); } },
+        { text: "🤝 激勵士氣！\n\n對場上任意一名對手說一句讚美的話，若成功，本回合行動將「不消耗」AP！", type: "blessing", effect: (p) => { p.freeAction = true; } },
+        { text: "🏰 緊急防線鞏固！\n\n隨機將一個我方 1 級或 2 級的領地直接提升 1 級！", type: "blessing", effect: (p) => {
+            let myCells = boardData.filter(c => c.type === 'normal' && c.owner === p.faction && c.level < 3);
+            if(myCells.length > 0) {
+                let target = myCells[Math.floor(Math.random() * myCells.length)];
+                target.level++;
+                showMsg(`🏰 我方領地【${target.content}】獲得防禦增強，升至 Lv.${target.level}！`);
+                renderBoardContent();
+            } else {
+                showMsg("場上沒有符合升級條件的我方領地，無事發生。");
+            }
+        }},
+        { text: "🚀 奇襲急行軍！\n\n士氣大振！立刻往前推進 2 格，並觸發該格事件！", type: "balanced", effect: (p) => {
+            setTimeout(() => {
+                p.pos = (p.pos + 2) % boardData.length;
+                updatePlayerTokens();
+                showMsg(`🚀 急行軍抵達新節點！`);
+                setTimeout(handleCell, 1000);
+            }, 1000);
+            return true; // 特殊標記，由卡片自己處理下一個回合流程
+        }},
+        { text: "💥 雷霆轟炸！\n\n隨機將一個敵對陣營的領地降低 1 級！", type: "balanced", effect: (p) => {
+            let enemyCells = boardData.filter(c => c.type === 'normal' && c.owner && c.owner !== p.faction);
+            if(enemyCells.length > 0) {
+                let target = enemyCells[Math.floor(Math.random() * enemyCells.length)];
+                target.level--;
+                if(target.level <= 0) {
+                    target.owner = null;
+                    showMsg(`💥 轟炸成功！敵方領地【${target.content}】已被夷為平地！`);
+                } else {
+                    showMsg(`⚔️ 轟炸成功！敵方領地【${target.content}】降至 Lv.${target.level}！`);
+                }
+                renderBoardContent();
+            } else {
+                showMsg("場上沒有敵方領地，炸彈落在了空地上。");
+            }
+        }},
+        { text: "🔮 空間傳送秘術！\n\n與場上隨機一位玩家交換目前地圖上的位置！", type: "balanced", effect: (p) => {
+            let others = players.filter(op => op.id !== p.id);
+            if(others.length > 0) {
+                let target = others[Math.floor(Math.random() * others.length)];
+                let temp = p.pos;
+                p.pos = target.pos;
+                target.pos = temp;
+                updatePlayerTokens();
+                showMsg(`🔮 秘術發動！${p.name} 與 ${target.name} 交換了位置！`);
+            }
+        }}
+    ];
+
+    let players = [], boardData = []; 
+    let currentPlayerIdx = 0, gameActive = false;
+    let globalMaxTurns = 20, currentTurnCount = 1;
+    let currentEventCard = null, activeCellIdx = 0;
+    let activeFactionsList = [];
+
+    // 初始化 UI
+    (function initUI() {
+        generatePlayerInputs();
+    })();
+
+    // 難度切換邏輯 (保留自由微調能力)
+    function applyDifficulty() {
+        const diff = document.getElementById('game-difficulty').value;
+        const apInput = document.getElementById('initial-ap');
+        const turnsInput = document.getElementById('max-turns');
+        const chanceInput = document.getElementById('chance-count');
+        const campApInput = document.getElementById('camp-ap-recovery');
+        
+        if (diff === 'easy') {
+            apInput.value = 15;
+            turnsInput.value = 15;
+            chanceInput.value = 6;
+            campApInput.value = 3;
+        } else if (diff === 'normal') {
+            apInput.value = 10;
+            turnsInput.value = 20;
+            chanceInput.value = 4;
+            campApInput.value = 2;
+        } else if (diff === 'hard') {
+            apInput.value = 6;
+            turnsInput.value = 25;
+            chanceInput.value = 2;
+            campApInput.value = 1;
+        }
+    }
+
+    function fillExample(str) {
+        document.getElementById('word-input').value = str;
+    }
+
+    function generatePlayerInputs() {
+        const fCount = parseInt(document.getElementById('faction-count').value);
+        const pCount = parseInt(document.getElementById('player-count').value);
+        const container = document.getElementById('player-names-container');
+        container.innerHTML = '';
+        
+        const availableFactions = ['A', 'B', 'C', 'D'].slice(0, fCount);
+        
+        for (let i = 0; i < pCount; i++) {
+            const group = document.createElement('div');
+            group.className = 'player-input-group';
+            
+            // 循環均勻分配預設陣營
+            let defaultFaction = availableFactions[i % fCount];
+            
+            // 生成陣營選單
+            let selectOptions = availableFactions.map(f => 
+                `<option value="${f}" ${defaultFaction===f?'selected':''}>${FACTIONS[f].icon} ${FACTIONS[f].name}</option>`
+            ).join('');
+
+            // 生成自訂圖騰選單
+            let avatarOptions = AVATARS.map((av, idx) => 
+                `<option value="${av}" ${i % AVATARS.length === idx ? 'selected' : ''}>${av}</option>`
+            ).join('');
+            
+            group.innerHTML = `
+                <label>隊員 ${i+1}:</label>
+                <select id="p-faction-${i}" class="faction-select ${defaultFaction}" onchange="updateFactionColor(this)">
+                    ${selectOptions}
+                </select>
+                <select id="p-avatar-${i}" style="font-size: 16px; background: #223; color: white; border: 1px solid #556; border-radius: 4px; padding: 4px; width: 60px;">
+                    ${avatarOptions}
+                </select>
+                <input type="text" id="p-name-${i}" value="將軍 ${i+1}" maxlength="8">
+            `;
+            container.appendChild(group);
+        }
+    }
+
+    function updateFactionColor(selectObj) {
+        selectObj.className = `faction-select ${selectObj.value}`;
+    }
+
+    function showMsg(text, duration=2500) {
+        const log = document.getElementById('message-log');
+        log.innerHTML = text; 
+        log.style.display = 'block';
+        setTimeout(() => log.style.display = 'none', duration);
+    }
+
+    function prepareGame() {
+        const input = document.getElementById('word-input').value.trim();
+        if (!input) { alert("請輸入戰場節點(生字)！"); return; }
+        
+        const initialAP = parseInt(document.getElementById('initial-ap').value) || 10;
+        globalMaxTurns = parseInt(document.getElementById('max-turns').value) || 20;
+        const pCount = parseInt(document.getElementById('player-count').value);
+
+        // 建立玩家資料
+        players = [];
+        let chosenFactions = new Set();
+        for (let i = 0; i < pCount; i++) {
+            const name = document.getElementById(`p-name-${i}`).value.trim() || `將軍 ${i+1}`;
+            const faction = document.getElementById(`p-faction-${i}`).value;
+            const avatar = document.getElementById(`p-avatar-${i}`).value; // 讀取自訂頭像
+            
+            chosenFactions.add(faction);
+            
+            players.push({
+                id: i, name: name, avatar: avatar,
+                faction: faction, pos: 0, ap: initialAP, freeAction: false
+            });
+        }
+
+        activeFactionsList = Array.from(chosenFactions).sort();
+
+        // 地圖初始化
+        boardData = [{ type: 'start', content: '營地', strokes: 0 }];
+        const chars = input.replace(/[^\u4e00-\u9fa5]/g, '').split('');
+        
+        if(chars.length === 0) { alert("輸入內容不包含有效的中文字元！"); return; }
+
+        chars.forEach(char => {
+            let strokes = 10;
+            try { strokes = cnchar.stroke(char) || 10; } catch(e) {}
+            boardData.push({ type: 'normal', content: char, strokes: strokes, owner: null, level: 0 });
+        });
+
+        const chanceCount = parseInt(document.getElementById('chance-count').value) || 0;
+        for(let i=0; i<chanceCount; i++) {
+            if (boardData.length > 2) {
+                const idx = Math.floor(Math.random() * (boardData.length - 1)) + 1;
+                boardData.splice(idx, 0, { type: 'chance', content: '❓', strokes: 0 });
+            }
+        }
+
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        
+        gameActive = true;
+        currentPlayerIdx = 0;
+        currentTurnCount = 1;
+        
+        renderDynamicScoreboardFramework();
+        renderBoard();
+        updateGameUI();
+        updateTurnDisplay();
+    }
+
+    function renderDynamicScoreboardFramework() {
+        const headerContainer = document.getElementById('score-header-container');
+        headerContainer.innerHTML = activeFactionsList.map(f => {
+            const fData = FACTIONS[f];
+            return `<div class="score-${f}" style="color:${fData.color}">
+                        ${fData.icon} ${fData.name}：<span id="score-val-${f}">0</span> 分
+                    </div>`;
+        }).join('<div style="color: #4b5563;">|</div>');
+    }
+
+    function calculateScores() {
+        let scores = { 'A': 0, 'B': 0, 'C': 0, 'D': 0 };
+        boardData.forEach(c => {
+            if (c.type === 'normal' && c.owner && c.level > 0) {
+                scores[c.owner] += (c.strokes * c.level);
+            }
+        });
+        return scores;
+    }
+
+    function updateGameUI() {
+        const scores = calculateScores();
+        
+        // 更新各陣營分數數字
+        activeFactionsList.forEach(f => {
+            const el = document.getElementById(`score-val-${f}`);
+            if(el) el.innerText = scores[f];
+        });
+        
+        // 動態計算並重繪多陣營能量條比例
+        let totalScore = activeFactionsList.reduce((sum, f) => sum + scores[f], 0);
+        const barContainer = document.getElementById('vs-bar-container');
+        
+        // 清除除了中間分隔線以外的舊能量區塊
+        const segments = barContainer.querySelectorAll('.vs-bar-segment');
+        segments.forEach(s => s.remove());
+
+        activeFactionsList.forEach(f => {
+            const fData = FACTIONS[f];
+            const fScore = scores[f];
+            let pct = totalScore === 0 ? (100 / activeFactionsList.length) : Math.round((fScore / totalScore) * 100);
+            
+            const seg = document.createElement('div');
+            seg.className = 'vs-bar-segment';
+            seg.style.width = `${pct}%`;
+            seg.style.background = fData.gradient;
+            seg.style.height = '100%';
+            seg.style.transition = 'width 0.4s ease';
+            seg.style.display = 'flex';
+            seg.style.alignItems = 'center';
+            seg.style.justifyContent = 'center';
+            seg.style.fontWeight = 'bold';
+            seg.style.color = '#fff';
+            seg.style.fontSize = '12px';
+            seg.innerText = pct > 8 ? `${pct}%` : '';
+            
+            barContainer.appendChild(seg);
+        });
+
+        // 剩餘圈數
+        document.getElementById('turns-left-disp').innerText = Math.max(0, globalMaxTurns - currentTurnCount + 1);
+
+        // 更新狀態面板
+        const container = document.getElementById('stats-panel');
+        container.innerHTML = '';
+
+        players.forEach((p, i) => {
+            const fData = FACTIONS[p.faction];
+            const div = document.createElement('div');
+            div.className = `player-card faction-${p.faction} ${i === currentPlayerIdx ? 'active' : ''}`;
+            if(p.ap <= 0) div.style.opacity = '0.4';
+            
+            div.innerHTML = `
+                <div class="player-header">
+                    <div class="player-avatar-disp token faction-${p.faction}">${p.avatar}</div>
+                    <div style="font-weight:bold; color:${fData.color}">${fData.name} - ${p.name}</div>
+                </div>
+                <div class="stat-row">
+                    <span>⚡ 行動力 (AP):</span> 
+                    <span class="stat-val" style="color:${p.ap<=0?'#e74c3c':'#2ecc71'};">${p.ap}</span>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function renderBoard() {
+        const container = document.getElementById('board');
+        container.innerHTML = '';
+        boardData.forEach((cell, idx) => {
+            const div = document.createElement('div');
+            let classes = ['cell'];
+            if(cell.type === 'start') classes.push('start');
+            if(cell.type === 'chance') classes.push('special-chance');
+            
+            div.className = classes.join(' ');
+            div.id = `cell-${idx}`;
+            
+            let html = `<div class="tokens-container" id="tokens-${idx}"></div>`;
+            
+            if (cell.type === 'normal') {
+                html += `<span class="cell-strokes">積分:${cell.strokes}</span>`;
+                html += `<div class="cell-content">${cell.content}</div>`;
+                html += `<div class="level-container">
+                            <span class="level-icon">🏰</span>
+                            <span class="level-icon">🏰</span>
+                            <span class="level-icon">🏰</span>
+                         </div>`;
+            } else {
+                html += `<div class="cell-content">${cell.content}</div>`;
+            }
+            
+            div.innerHTML = html;
+            container.appendChild(div);
+        });
+        
+        renderBoardContent();
+        updatePlayerTokens();
+    }
+
+    function renderBoardContent() {
+        boardData.forEach((cell, idx) => {
+            const el = document.getElementById(`cell-${idx}`);
+            if (cell.type === 'normal') {
+                el.classList.remove('owned-A', 'owned-B', 'owned-C', 'owned-D', 'level-1', 'level-2', 'level-3');
+                if (cell.owner) {
+                    el.classList.add(`owned-${cell.owner}`);
+                    el.classList.add(`level-${cell.level}`);
+                }
+            }
+        });
+    }
+
+    function updatePlayerTokens() {
+        document.querySelectorAll('.tokens-container').forEach(el => el.innerHTML = '');
+        players.forEach(p => {
+            if(p.ap > 0) { 
+                const container = document.getElementById(`tokens-${p.pos}`);
+                if (container) {
+                    const token = document.createElement('div');
+                    token.className = `token faction-${p.faction}`;
+                    token.innerText = p.avatar;
+                    container.appendChild(token);
+                }
+            }
+        });
+    }
+
+    function updateTurnDisplay() {
+        const p = players[currentPlayerIdx];
+        const el = document.getElementById('turn-indicator');
+        const fData = FACTIONS[p.faction];
+        
+        if(p.ap <= 0) {
+            nextTurn();
+            return;
+        }
+        
+        el.innerText = `👉 ${fData.icon} ${p.name} 的回合`;
+        el.style.color = fData.color;
+        document.getElementById('roll-btn').disabled = false;
+        updateGameUI();
+    }
+
+    function rollDice() {
+        if (!gameActive) return;
+        document.getElementById('roll-btn').disabled = true;
+        
+        let rolls = 0;
+        let finalRoll = Math.floor(Math.random() * 6) + 1;
+        const diceDisplay = document.getElementById('dice-display');
+        
+        let interval = setInterval(() => {
+            diceDisplay.innerText = Math.floor(Math.random() * 6) + 1;
+            rolls++;
+            if (rolls > 10) {
+                clearInterval(interval);
+                diceDisplay.innerText = finalRoll;
+                setTimeout(() => movePlayer(finalRoll), 500);
+            }
+        }, 50);
+    }
+
+    function movePlayer(steps) {
+        const player = players[currentPlayerIdx];
+        let oldPos = player.pos;
+        player.pos = (player.pos + steps) % boardData.length;
+        
+        // 經過營地補給
+        if (player.pos < oldPos) {
+            const recovery = parseInt(document.getElementById('camp-ap-recovery').value) || 0;
+            if(recovery > 0) {
+                player.ap += recovery;
+                showMsg(`🏕️ 通過營地！全軍整修物資，AP 恢復 ${recovery} 點！`);
+            }
+        }
+
+        updatePlayerTokens();
+        setTimeout(() => handleCell(), 500);
+    }
+
+    function handleCell() {
+        const player = players[currentPlayerIdx];
+        const cell = boardData[player.pos];
+        activeCellIdx = player.pos;
+
+        if (cell.type === 'start') {
+            showMsg("🏕️ 駐紮大營！修整裝備精神飽滿！");
+            setTimeout(nextTurn, 1500);
+            
+        } else if (cell.type === 'normal') {
+            setupActionModal(player, cell);
+            document.getElementById('action-modal').style.display = 'flex';
+            
+        } else if (cell.type === 'chance') {
+            // 命運卡池過濾篩選
+            const deckType = document.getElementById('event-deck-type').value;
+            let filteredDeck = ALL_EVENT_CARDS;
+            if (deckType === 'blessing') {
+                filteredDeck = ALL_EVENT_CARDS.filter(c => c.type === 'blessing');
+            } else if (deckType === 'hardcore') {
+                filteredDeck = ALL_EVENT_CARDS.filter(c => c.type === 'hardcore' || c.type === 'balanced');
+            }
+            
+            currentEventCard = filteredDeck[Math.floor(Math.random() * filteredDeck.length)];
+            document.getElementById('event-desc').innerText = currentEventCard.text;
+            document.getElementById('event-modal').style.display = 'flex';
+        }
+    }
+
+    function setupActionModal(player, cell) {
+        document.getElementById('modal-char').innerText = cell.content;
+        const badge = document.getElementById('modal-badge');
+        const title = document.getElementById('action-title');
+        const confirmBtn = document.getElementById('btn-confirm-action');
+        const desc = document.getElementById('modal-desc');
+        
+        // 挑戰難度說明
+        const mode = document.getElementById('challenge-mode').value;
+        if(mode === 'idiom') {
+            desc.innerText = `請大聲唸出一個包含【${cell.content}】字的四字成語！`;
+        } else if(mode === 'sentence') {
+            desc.innerText = `請大聲用包含【${cell.content}】字的情境現場造一個完整的句子！`;
+        } else {
+            desc.innerText = `請大聲唸出包含【${cell.content}】字的正確認讀造詞！`;
+        }
+
+        if (!cell.owner || cell.level === 0) {
+            badge.className = 'action-badge badge-neutral';
+            badge.innerText = '佔領空地';
+            title.innerText = '擴土封疆，開拓新領地！';
+            title.style.color = 'var(--gold)';
+            confirmBtn.innerText = '🚩 宣稱佔領';
+        } 
+        else if (cell.owner === player.faction) {
+            if (cell.level >= 3) {
+                badge.className = 'action-badge badge-upgrade';
+                badge.innerText = '頂級要塞';
+                title.innerText = '此地防禦已達最高壁壘！';
+                title.style.color = '#2ecc71';
+                confirmBtn.innerText = '✅ 巡視要塞';
+            } else {
+                badge.className = 'action-badge badge-upgrade';
+                badge.innerText = `升級領地 (目前 Lv.${cell.level})`;
+                title.innerText = '鞏固城池，加固防禦工事！';
+                title.style.color = '#2ecc71';
+                confirmBtn.innerText = '🏰 進行升級';
+            }
+        } 
+        else {
+            badge.className = 'action-badge badge-attack';
+            badge.innerText = `敵軍勢力 (Lv.${cell.level})`;
+            title.innerText = '遭遇敵陣，發動突擊轟炸！';
+            title.style.color = '#e74c3c';
+            confirmBtn.innerText = '⚔️ 破壞陣地';
+        }
+    }
+
+    function confirmAction(isActing) {
+        document.getElementById('action-modal').style.display = 'none';
+        const player = players[currentPlayerIdx];
+        const cell = boardData[activeCellIdx];
+
+        if (isActing) {
+            if (cell.owner === player.faction && cell.level >= 3) {
+                showMsg("要塞固若金湯，無須再行升級。");
+                setTimeout(nextTurn, 1000);
+                return;
+            }
+
+            // AP 扣除判定
+            if (!player.freeAction) {
+                if (player.ap <= 0) {
+                    showMsg("行動力不足，無法發動戰術任務！");
+                    setTimeout(nextTurn, 1000);
+                    return;
+                }
+                player.ap--;
+            } else {
+                player.freeAction = false; 
+            }
+
+            // 核心規則邏輯分支
+            if (!cell.owner || cell.level === 0) {
+                cell.owner = player.faction;
+                cell.level = 1;
+                showMsg(`🚩 宣稱成功！在此地插上我方陣營軍旗！`);
+            } 
+            else if (cell.owner === player.faction) {
+                cell.level++;
+                showMsg(`🏰 築牆成功！防禦工事提升至等級 ${cell.level}！`);
+            } 
+            else {
+                cell.level--;
+                if (cell.level <= 0) {
+                    cell.owner = null;
+                    showMsg(`💥 突擊大勝！成功將敵方據點全部夷為平地！`);
+                } else {
+                    showMsg(`⚔️ 突擊成功！敵方防線受損，降至等級 ${cell.level}！`);
+                }
+            }
+            
+            renderBoardContent();
+            updateGameUI();
+        } else {
+            showMsg("🛡️ 選擇按兵不動，保留體力。");
+        }
+        
+        setTimeout(nextTurn, 1800);
+    }
+
+    function resolveEvent() {
+        document.getElementById('event-modal').style.display = 'none';
+        const player = players[currentPlayerIdx];
+        
+        let selfResolve = false;
+        if (currentEventCard && currentEventCard.effect) {
+            selfResolve = currentEventCard.effect(player);
+        }
+        
+        updateGameUI();
+        if(!selfResolve) {
+            setTimeout(nextTurn, 1800);
+        }
+    }
+
+    function checkGameEnd() {
+        const activePlayers = players.filter(p => p.ap > 0);
+        if (activePlayers.length === 0 || currentTurnCount > globalMaxTurns) {
+            endGame();
+            return true;
+        }
+        return false;
+    }
+
+    function endGame() {
+        gameActive = false;
+        const modal = document.getElementById('end-modal');
+        const scores = calculateScores();
+        
+        const container = document.getElementById('end-scores-container');
+        container.innerHTML = '';
+        
+        // 排序尋找最高分者
+        let maxScore = -1;
+        let winnerFaction = null;
+        let isTie = false;
+
+        activeFactionsList.forEach(f => {
+            const fData = FACTIONS[f];
+            const score = scores[f];
+            
+            if(score > maxScore) {
+                maxScore = score;
+                winnerFaction = f;
+                isTie = false;
+            } else if(score === maxScore && maxScore > 0) {
+                isTie = true;
+            }
+
+            const row = document.createElement('div');
+            row.style.color = fData.color;
+            row.style.fontSize = '20px';
+            row.style.display = 'flex';
+            row.style.justifyContent = 'space-between';
+            row.innerHTML = `<span>${fData.icon} ${fData.name}：</span> <span>${score} 分</span>`;
+            container.appendChild(row);
+        });
+        
+        const display = document.getElementById('winner-display');
+        if (isTie || maxScore === 0) {
+            display.innerHTML = "🤝 各陣營勢均力敵，本場戰役平局收場！";
+            display.style.color = "#fff";
+        } else {
+            display.innerHTML = `🎉 恭喜 【${FACTIONS[winnerFaction].name}】 旗開得勝，開創不朽傳奇！`;
+            display.style.color = FACTIONS[winnerFaction].color;
+        }
+        
+        modal.style.display = 'flex';
+    }
+
+    function nextTurn() {
+        if (checkGameEnd()) return;
+
+        currentPlayerIdx++;
+        
+        if (currentPlayerIdx >= players.length) {
+            currentPlayerIdx = 0;
+            currentTurnCount++;
+        }
+        
+        if (!checkGameEnd()) {
+            updateTurnDisplay();
+        }
+    }
+</script>
+</body>
+</html>
