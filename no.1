@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐉 魔王討伐戰</title>
+<script src="https://cdn.jsdelivr.net/npm/cnchar/cnchar.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cnchar-trad/cnchar.trad.min.js"></script>
+
+<style>
+    :root { 
+        --bg-color: #0b0914; 
+        --panel-bg: #161124;
+        --boss-color: #ff4757;
+        --gold: #f1c40f;
+        --text-light: #e0e0e0;
+        --ui-border: #523f75;
+        --event-color: #9b59b6;
+        --item-color: #2ecc71;
+    }
+    
+    body { font-family: 'Microsoft JhengHei', sans-serif; background: var(--bg-color); color: var(--text-light); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; background-image: radial-gradient(#221936 1px, transparent 1px); background-size: 25px 25px; }
+    h1 { color: var(--gold); margin-bottom: 10px; text-shadow: 0 0 15px rgba(241, 196, 15, 0.6); text-align: center; letter-spacing: 3px; font-size: 2.2em; }
+    
+    /* Setup Screen */
+    #setup-screen { background: var(--panel-bg); padding: 30px; border-radius: 15px; box-shadow: 0 10px 50px rgba(0,0,0,0.9); border: 3px solid var(--ui-border); max-width: 900px; width: 100%; color: #fff; }
+    
+    .setup-group { border: 1px solid var(--ui-border); border-radius: 10px; padding: 20px; margin-bottom: 20px; background: rgba(0,0,0,0.4); }
+    .setup-title { font-size: 1.3em; font-weight: bold; color: var(--boss-color); margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid var(--ui-border); padding-bottom: 8px; text-shadow: 1px 1px 3px #000; }
+    
+    .player-setup-area { max-height: 350px; overflow-y: auto; padding-right: 10px; }
+    .player-input-group { display: flex; align-items: center; margin-bottom: 10px; gap: 10px; flex-wrap: wrap; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid #332b47; }
+    .player-input-group select, .player-input-group input { padding: 8px; border-radius: 4px; border: 1px solid var(--ui-border); background: #0b0914; color: white; font-size: 15px; }
+    .player-input-group input[type="text"] { flex-grow: 1; min-width: 120px; }
+    .player-input-group input[type="color"] { width: 40px; padding: 0; cursor: pointer; border: 1px solid #777; height: 35px; border-radius: 4px; }
+    
+    .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; font-size: 0.95em; flex-wrap: wrap; gap: 15px; }
+    .setting-row label { flex: 1; min-width: 250px; }
+    .setting-row input[type="number"], .setting-row input[type="text"], .setting-row select { padding: 8px; border-radius: 4px; border: 1px solid var(--ui-border); background: #0b0914; color: white; font-size: 15px; width: 100%; box-sizing: border-box; margin-top: 5px; }
+    
+    .info-box { background: rgba(255, 71, 87, 0.05); border-left: 4px solid var(--boss-color); padding: 15px; font-size: 0.95em; margin-top: 15px; border-radius: 0 8px 8px 0; line-height: 1.6; color: #dcdde1; border-top: 1px solid rgba(255,71,87,0.2); border-bottom: 1px solid rgba(255,71,87,0.2); border-right: 1px solid rgba(255,71,87,0.2); }
+    .info-box h3 { margin-top: 0; color: var(--gold); font-size: 1.1em; margin-bottom: 8px; }
+    .info-box hr { border-color: rgba(255, 71, 87, 0.3); margin: 12px 0; }
+
+    .btn { background: linear-gradient(135deg, #8e44ad, #5e3370); color: white; border: 2px solid #9b59b6; padding: 12px 24px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.5); text-shadow: 1px 1px 2px #000; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.6); filter: brightness(1.2); }
+    .btn:active { transform: translateY(1px); }
+    .btn:disabled { background: #444; border-color: #333; cursor: not-allowed; color: #888; text-shadow: none; box-shadow: none;}
+    .btn-secondary { background: linear-gradient(135deg, #34495e, #2c3e50); border-color: #7f8c8d; }
+    .btn-item { background: linear-gradient(135deg, #27ae60, #2ecc71); border-color: #2ecc71; }
+    .btn-start { background: linear-gradient(135deg, #c0392b, #8e44ad); width: 100%; font-size: 22px; padding: 15px; margin-top: 10px; letter-spacing: 2px; border-color: #ff4757; box-shadow: 0 0 15px rgba(231, 76, 60, 0.4); }
+
+    /* Game Screen */
+    #game-screen { display: none; width: 100%; max-width: 1200px; flex-direction: column; align-items: center; padding-bottom: 120px; }
+    
+    /* Boss Area */
+    #boss-panel { width: 100%; background: linear-gradient(to bottom, #2d1114, #0f0708); padding: 25px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 0 30px rgba(255, 71, 87, 0.4); border: 2px solid var(--boss-color); display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden; }
+    #boss-avatar { font-size: 70px; filter: drop-shadow(0 0 20px rgba(255, 71, 87, 0.9)); margin-bottom: 10px; animation: breathe 2.5s infinite ease-in-out; }
+    @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    
+    .boss-name { font-size: 1.7em; font-weight: bold; color: var(--gold); text-shadow: 0 0 12px #000; margin-bottom: 12px; letter-spacing: 4px; }
+    
+    .hp-bar-container { width: 90%; height: 32px; background: #111; border-radius: 16px; border: 2px solid #555; overflow: hidden; position: relative; box-shadow: inset 0 0 12px #000; }
+    .hp-bar-fill { height: 100%; background: linear-gradient(90deg, #b31217, #ff4757); width: 100%; transition: width 0.4s ease-out; box-shadow: 0 0 20px rgba(255, 71, 87, 0.8); }
+    .hp-text { position: absolute; width: 100%; text-align: center; top: 4px; font-weight: bold; font-size: 17px; color: white; text-shadow: 1px 1px 3px #000; z-index: 2; letter-spacing: 1px; }
+
+    /* Stats Panel */
+    .stats-panel { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; width: 100%; margin-bottom: 20px; }
+    .player-card { background: var(--panel-bg); padding: 12px; border-radius: 12px; border: 2px solid var(--ui-border); transition: 0.3s; position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.6); }
+    .player-card.active { transform: translateY(-5px); border-color: var(--gold); box-shadow: 0 0 20px rgba(241, 196, 15, 0.4); background: #241a38; }
+    
+    .player-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; border-bottom: 1px solid var(--ui-border); padding-bottom: 6px; }
+    .player-avatar-disp { font-size: 24px; background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; border: 2px solid #7f8c8d; }
+    .class-badge { font-size: 12px; padding: 2px 6px; border-radius: 8px; font-weight: bold; background: #34495e; color: #fff; margin-left: auto; border: 1px solid #555; }
+
+    .stat-row { font-size: 13px; margin: 6px 0; display: flex; justify-content: space-between; align-items: center; color: #ccc; }
+    .stat-val { font-weight: bold; color: white; font-size: 15px; }
+
+    /* Board */
+    .board-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; width: 100%; padding: 20px; background: rgba(0,0,0,0.5); border-radius: 15px; border: 2px solid var(--ui-border); }
+    
+    .cell { background: #1b1429; aspect-ratio: 1; border-radius: 12px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; border: 2px solid #3c2d59; transition: 0.3s; color: #eee; box-shadow: 0 4px 0 #0b0914; }
+    .cell.start { background: rgba(46, 204, 113, 0.12); border-color: #2ecc71; color: #abebc6; }
+    .cell.heal { background: rgba(52, 152, 219, 0.12); border-color: #3498db; color: #85c1e9; }
+    .cell.event { background: rgba(155, 89, 182, 0.12); border-color: var(--event-color); color: #d2b4de; animation: pulseEvent 2s infinite; }
+    
+    @keyframes pulseEvent { 0% { box-shadow: 0 0 0 0 rgba(155, 89, 182, 0.6), 0 4px 0 #0b0914; } 70% { box-shadow: 0 0 10px 10px rgba(155, 89, 182, 0), 0 4px 0 #0b0914; } 100% { box-shadow: 0 0 0 0 rgba(155, 89, 182, 0), 0 4px 0 #0b0914; } }
+
+    .cell-strokes { font-size: 12px; color: #aaa; position: absolute; bottom: 5px; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 10px; }
+    .cell-content { z-index: 2; text-shadow: 2px 2px 4px rgba(0,0,0,0.9); }
+    
+    .tokens-container { position: absolute; top: -10px; left: -10px; right: -10px; display: flex; gap: 2px; flex-wrap: wrap; z-index: 10; pointer-events: none; justify-content: center; }
+    .token { width: 28px; height: 28px; border-radius: 50%; display:flex; justify-content:center; align-items:center; font-size:16px; box-shadow: 0 3px 6px rgba(0,0,0,0.9); border: 2px solid white; background: #333; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+    /* Controls & Modals */
+    .controls { position: fixed; bottom: 20px; background: rgba(22, 17, 36, 0.96); padding: 15px 30px; border-radius: 40px; box-shadow: 0 10px 35px rgba(0,0,0,0.9); border: 2px solid var(--gold); display: flex; gap: 20px; align-items: center; z-index: 100; backdrop-filter: blur(6px); }
+    #dice-display { font-size: 38px; font-weight: bold; width: 45px; text-align: center; color: var(--gold); }
+    
+    #message-log { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 2px solid var(--boss-color); color: #fff; padding: 15px 30px; border-radius: 10px; z-index: 500; display: none; text-align: center; font-size: 18px; font-weight: bold; box-shadow: 0 0 25px rgba(255, 71, 87, 0.6); min-width: 300px; }
+    
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; justify-content: center; align-items: center; backdrop-filter: blur(6px); }
+    .modal { background: var(--panel-bg); padding: 30px; border-radius: 15px; text-align: center; max-width: 500px; width: 90%; box-shadow: 0 0 40px rgba(255, 71, 87, 0.5); border: 3px solid var(--boss-color); color: white; }
+    .modal-title { margin-top: 0; font-size: 1.6em; border-bottom: 1px solid var(--ui-border); padding-bottom: 15px; color: var(--gold); }
+    .modal-char { font-size: 70px; display: block; margin: 15px 0; font-weight: bold; text-shadow: 0 0 20px rgba(241,196,15,0.4); color: white; }
+    
+    /* Event & Boss Modal Styles */
+    #event-modal .modal { border-color: var(--event-color); box-shadow: 0 0 40px rgba(155, 89, 182, 0.5); }
+    #event-title { color: #d2b4de; }
+    .event-desc { font-size: 18px; margin: 20px 0; line-height: 1.6; color: #fff; }
+    .event-btn-group { display: flex; flex-direction: column; gap: 10px; }
+    
+    .damage-text { position: absolute; color: #ff4757; font-weight: bold; font-size: 42px; text-shadow: 2px 2px 0 #000, 0 0 15px #ff4757; animation: floatUp 1.2s ease-out forwards; z-index: 500; pointer-events: none; }
+    @keyframes floatUp { 0% { transform: translate(-50%, 0) scale(1); opacity: 1; } 100% { transform: translate(-50%, -90px) scale(1.5); opacity: 0; } }
+    
+    .screen-shake { animation: shake 0.6s; }
+    @keyframes shake { 0% { transform: translate(2px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -3px) rotate(-1deg); } 20% { transform: translate(-4px, 0px) rotate(1deg); } 30% { transform: translate(4px, 2px) rotate(0deg); } 40% { transform: translate(1px, -2px) rotate(1deg); } 50% { transform: translate(-2px, 3px) rotate(-1deg); } 60% { transform: translate(-4px, 1px) rotate(0deg); } 70% { transform: translate(4px, 2px) rotate(-1deg); } 80% { transform: translate(-2px, -2px) rotate(1deg); } 90% { transform: translate(2px, 3px) rotate(0deg); } 100% { transform: translate(1px, -3px) rotate(-1deg); } }
+
+</style>
+</head>
+<body>
+
+    <h1>🐉 魔王討伐戰</h1>
+
+    <div id="setup-screen">
+        <div class="setup-group">
+            <div class="setup-title">⚔️ 1. 勇者結集 (支援 2-10 人)</div>
+            <div class="setting-row">
+                <label>隊伍人數：
+                    <select id="player-count" onchange="generatePlayerInputs()">
+                        <option value="2">2 人小隊</option>
+                        <option value="3">3 人小隊</option>
+                        <option value="4" selected>4 人小隊</option>
+                        <option value="5">5 人小隊</option>
+                        <option value="6">6 人遠征軍</option>
+                        <option value="7">7 人遠征軍</option>
+                        <option value="8">8 人遠征軍</option>
+                        <option value="9">9 人遠征軍</option>
+                        <option value="10">10 人大軍</option>
+                    </select>
+                </label>
+            </div>
+            <div id="player-names-container" class="player-setup-area" style="margin-top: 15px;"></div>
+        </div>
+
+        <div class="setup-group">
+            <div class="setup-title">📜 2. 討伐卷軸與魔王設定</div>
+            <div class="setting-row">
+                <label style="flex: 100%;">輸入封印咒語 (本課生字)：
+                    <input type="text" id="word-input" placeholder="請輸入本課生字，例如：員社教導演...">
+                </label>
+            </div>
+            <div class="setting-row">
+                <label>👿 魔王稱號：<input type="text" id="boss-name-input" value="混沌魔王 奧米加"></label>
+                <label>初始體力 (AP)：<input type="number" id="initial-ap" value="15" min="5" max="50"></label>
+                <label>❤️ 魔王血量：<input type="number" id="boss-hp" value="3200" min="100" max="20000" step="100"></label>
+            </div>
+        </div>
+
+        <div class="setup-group">
+            <div class="setup-title">⚙️ 3. 戰場進階參數 (沙盒模式)</div>
+            
+            <div class="setting-row">
+                <label>🎒 道具系統模式：
+                    <select id="cfg-item-mode">
+                        <option value="manual" selected>開啟 (背包模式，手動選擇對象使用)</option>
+                        <option value="auto">開啟 (自動模式，獲得立刻生效)</option>
+                        <option value="none">關閉道具系統 (硬核無道具)</option>
+                    </select>
+                </label>
+                <label>🌟 道具強度等級 (Level)：
+                    <select id="cfg-item-level">
+                        <option value="1">Lv.1 微弱 (復活回5點/卷軸回2點)</option>
+                        <option value="2" selected>Lv.2 標準 (復活回10點/卷軸回5點)</option>
+                        <option value="3">Lv.3 史詩 (復活回20點/卷軸回10點)</option>
+                    </select>
+                </label>
+            </div>
+            
+            <div class="setting-row">
+                <label>❓ 隨機事件出現頻率：
+                    <select id="cfg-event-freq">
+                        <option value="4">高頻 (每 4 格出現一次)</option>
+                        <option value="6" selected>標準 (每 6 格出現一次)</option>
+                        <option value="8">稀少 (每 8 格出現一次)</option>
+                    </select>
+                </label>
+                <label>💧 治癒泉水設定：
+                    <select id="cfg-heal-freq">
+                        <option value="3,2">密集微補 (每3格/回2點)</option>
+                        <option value="4,3" selected>標準配置 (每4格/回3點)</option>
+                        <option value="5,5">稀有大補 (每5格/回5點)</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="setting-row">
+                <label>🔥 不死意志 (保底防護)：
+                    <select id="cfg-undying-will">
+                        <option value="true" selected>開啟 (每人限1次，AP歸零強制保留1點並狂暴)</option>
+                        <option value="false">關閉 (AP歸零立即陣亡)</option>
+                    </select>
+                </label>
+                <label>🛡️ 放棄攻擊是否消耗 AP：
+                    <select id="cfg-skip-cost">
+                        <option value="0" selected>無消耗 (保留體力)</option>
+                        <option value="1">扣除 1 AP (硬核模式)</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="setting-row">
+                <label>⚔️ 基礎傷害倍率：
+                    <select id="cfg-dmg-mult">
+                        <option value="5">低倍率 (筆畫數 × 5)</option>
+                        <option value="10" selected>標準倍率 (筆畫數 × 10)</option>
+                        <option value="20">高倍率 (筆畫數 × 20)</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="info-box">
+                <h3>🎭 職業系統提示：</h3>
+                🗡️ <b>劍士：</b>物理精通（每次攻擊固定附加真實傷害）。<br>
+                🧙‍♂️ <b>法師：</b>魔力湧動（踩到治癒泉水時，恢復量直接翻倍）。<br>
+                🏹 <b>遊俠：</b>靈動步伐（每次擲骰移動時，自動額外前進 1 步）。<br>
+                🛡️ <b>聖騎士：</b>神聖信仰（造成的最終傷害額外乘 1.2 倍）。
+            </div>
+        </div>
+
+        <button class="btn btn-start" onclick="prepareGame()">⚔️ 踏上討伐之路！</button>
+    </div>
+
+    <div id="game-screen">
+        <div id="boss-panel">
+            <div class="boss-name" id="boss-name-display">👿 混沌魔王 奧米加</div>
+            <div id="boss-avatar">🐉</div>
+            <div class="hp-bar-container">
+                <div class="hp-text"><span id="boss-hp-current">3200</span> / <span id="boss-hp-max">3200</span></div>
+                <div class="hp-bar-fill" id="boss-hp-bar"></div>
+            </div>
+        </div>
+
+        <div class="stats-panel" id="stats-panel"></div>
+        <div class="board-container" id="board"></div>
+        
+        <div class="controls">
+            <div id="turn-indicator" style="font-weight: bold; color: #fff; font-size: 1.3em; min-width: 140px;">準備中...</div>
+            <button class="btn btn-item" id="inventory-btn" onclick="openInventory()" style="display:none; font-size: 16px;">🎒 背包 (0)</button>
+            <button class="btn" id="roll-btn" onclick="rollDice()" style="font-size: 18px; padding: 12px 25px;">🎲 擲骰移動</button>
+            <span id="dice-display">?</span>
+        </div>
+    </div>
+
+    <div id="message-log">訊息提示</div>
+
+    <div class="modal-overlay" id="inventory-modal">
+        <div class="modal" style="border-color: var(--item-color);">
+            <h2 class="modal-title" style="color: var(--item-color);">🎒 勇者背包</h2>
+            <div id="inventory-list" style="text-align: left; margin: 15px 0; max-height: 250px; overflow-y: auto;"></div>
+            <button class="btn btn-secondary" style="width: 100%; margin-top: 10px;" onclick="closeInventory()">返回戰場</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="action-modal">
+        <div class="modal">
+            <h2 class="modal-title" id="action-title">⚔️ 詠唱魔法攻擊</h2>
+            <span class="modal-char" id="modal-char">字</span>
+            <p style="font-size: 18px; font-weight: bold; color: #fff;">請大聲唸出包含此字的造詞！</p>
+            <p style="color: #aaa; font-size: 14px;">(攻擊將消耗 1 點 AP)</p>
+            
+            <div style="margin-top: 25px; display: flex; gap: 10px; justify-content: center;">
+                <button class="btn" style="flex:1; font-size:18px; background:linear-gradient(135deg, #c0392b, #e74c3c);" onclick="confirmAction(true)">🔥 成功詠唱！</button>
+                <button class="btn btn-secondary" style="flex:0.8;" onclick="confirmAction(false)" id="skip-btn-text">🛡️ 放棄攻擊</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="event-modal">
+        <div class="modal">
+            <h2 class="modal-title" id="event-title">❓ 隨機事件</h2>
+            <div class="event-desc" id="event-desc">這裡發生了什麼事...</div>
+            <div class="event-btn-group" id="event-buttons"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="boss-attack-modal">
+        <div class="modal" style="border-color: #ff4757; box-shadow: 0 0 50px rgba(255, 71, 87, 0.6);">
+            <h2 class="modal-title" id="boss-attack-title" style="color: #ff4757; letter-spacing: 3px;">👿 魔王怒火反擊！</h2>
+            <div id="boss-skill-icon" style="font-size: 65px; margin: 15px 0; animation: breathe 1.5s infinite ease-in-out;">🔥</div>
+            <div class="event-desc" id="boss-attack-desc" style="font-size: 19px; line-height: 1.6;">魔王正在凝聚毀滅力量...</div>
+            <button class="btn" style="background: linear-gradient(135deg, #c0392b, #ff4757); border-color: #ff6b81; width: 80%; margin-top: 15px; font-size:18px;" onclick="closeBossModal()">承受怒火！</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="end-modal">
+        <div class="modal" style="max-width: 500px;">
+            <h2 class="modal-title" id="end-title" style="font-size: 2.2em; border:none;">🏆 討伐結果</h2>
+            <div id="winner-display" style="text-align: center; margin: 20px 0; font-size: 20px; font-weight:bold; line-height: 1.5;"></div>
+            <div id="damage-board" style="background:rgba(0,0,0,0.5); padding:15px; border-radius:10px; margin-bottom:20px; text-align:left; font-size:16px; max-height: 200px; overflow-y:auto;"></div>
+            <button class="btn" style="width:100%; font-size: 18px;" onclick="location.reload()">🔄 重新開始冒險</button>
+        </div>
+    </div>
+
+<script>
+    const AVATARS = ['😎','🧙‍♂️','🥷','🧚‍♀️','🦁','🦉','🤖','👽','👻','🤡','💩','🐱'];
+    const DEFAULT_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22', '#1abc9c', '#e84393', '#00cec9', '#fdcb6e'];
+    
+    const CLASSES = {
+        warrior: { id: 'warrior', name: '劍士', icon: '🗡️', buffText: '物理精通' },
+        mage:    { id: 'mage', name: '法師', icon: '🧙‍♂️', buffText: '魔力湧動' },
+        ranger:  { id: 'ranger', name: '遊俠', icon: '🏹', buffText: '靈動步伐' },
+        paladin: { id: 'paladin', name: '聖騎', icon: '🛡️', buffText: '神聖信仰' }
+    };
+
+    let players = [], boardData = []; 
+    let boss = { maxHp: 3200, hp: 3200, name: "混沌魔王 奧米加" };
+    let currentPlayerIdx = 0, gameActive = false;
+    
+    // 遊戲全域動態配置 (沙盒參數)
+    let config = {
+        itemMode: 'manual',
+        itemLevel: 2,
+        eventFreq: 6,
+        healFreq: 4,
+        baseHeal: 3,
+        undyingWill: true,
+        skipCost: 0,
+        dmgMult: 10,
+        reviveAP: 10,
+        scrollAP: 5
+    };
+
+    function getDynamicItemPool() {
+        return [
+            { id: 'revive', name: '復活藥水', icon: '🧪', desc: `恢復目標 ${config.reviveAP} 點 AP (可對陣亡者使用)` },
+            { id: 'berserk', name: '狂暴藥劑', icon: '🍷', desc: '使目標獲得狂暴狀態，下次攻擊傷害直接翻倍' },
+            { id: 'scroll', name: '治癒卷軸', icon: '📜', desc: `全體存活勇者恢復 ${config.scrollAP} 點 AP` }
+        ];
+    }
+
+    const EVENTS = [
+        {
+            title: "💰 貪婪的流浪商人", text: "「嘿，勇者！要不要拿你的戰利品跟我換點好東西？」商人盯著你。",
+            choices: [
+                { text: "花費 50 傷害值，換取 3 AP", action: (p) => { 
+                    if(p.dmgDealt >= 50){ p.dmgDealt -= 50; p.ap += 3; return "交易成功！獲得 3 AP。"; } 
+                    else { return "傷害值不足，商人補刀嘲笑了你。"; } 
+                } },
+                { text: "拒絕交易", action: (p) => { return "你冷漠地走開了。"; } }
+            ]
+        },
+        {
+            title: "🏺 古老的神秘石碑", text: "石碑上刻著發光的符文，似乎蘊含著強大的力量，但也伴隨著未知危險...",
+            choices: [
+                { text: "觸摸石碑 (隨機獲得 5 AP 或 扣除 2 AP)", action: (p) => { 
+                    if(Math.random() > 0.5){ p.ap += 5; return "石碑湧出溫暖的光芒！獲得 5 AP！"; } 
+                    else { return "石碑爆發出暗影魔能！" + loseAP(p, 2); } 
+                } },
+                { text: "安全第一，離開", action: (p) => { return "你決定不冒險，安然離去。"; } }
+            ]
+        },
+        {
+            title: "🧚 受傷的森林精靈", text: "一隻精靈被困在荊棘中，如果消耗體力救牠，或許會得到特殊回報？",
+            choices: [
+                { text: "消耗 2 AP 救助精靈", action: (p) => { 
+                    if(p.ap > 2) { 
+                        let msg = loseAP(p, 2);
+                        p.buff_double_damage = true; 
+                        return "精靈給了你魔王弱點提示！下次攻擊必定雙倍傷害！" + msg; 
+                    } else { return "AP 不足，無法安全救助。"; } 
+                } },
+                { text: "裝作沒看到", action: (p) => { return "你鐵石心腸地走開了。"; } }
+            ]
+        },
+        {
+            title: "🎁 神秘的冒險者寶箱", text: "你在廢墟中找到了一個發光的寶箱！",
+            choices: [
+                { text: "打開寶箱", action: (p) => { 
+                    if (config.itemMode === 'none') {
+                        p.ap += config.scrollAP;
+                        return `✨ 寶箱裡裝著純淨的魔法能量！恢復 ${config.scrollAP} 點 AP！`;
+                    }
+
+                    let pool = getDynamicItemPool();
+                    let item = pool[Math.floor(Math.random() * pool.length)];
+                    
+                    if (config.itemMode === 'auto') {
+                        if (item.id === 'revive') {
+                            let deadPlayer = players.find(pl => pl.ap <= 0);
+                            if (deadPlayer) {
+                                deadPlayer.ap += config.reviveAP;
+                                return `✨ 獲得【復活藥水】，立刻復活了【${deadPlayer.name}】並恢復 ${config.reviveAP} AP！`;
+                            } else {
+                                p.ap += config.reviveAP;
+                                return `✨ 獲得【復活藥水】，無人陣亡，能量湧入你的體內恢復 ${config.reviveAP} AP！`;
+                            }
+                        } else if (item.id === 'berserk') {
+                            p.buff_double_damage = true;
+                            return `🍷 喝下【狂暴藥劑】，你感覺充滿力量！下次攻擊傷害翻倍！`;
+                        } else if (item.id === 'scroll') {
+                            players.forEach(pl => { if(pl.ap > 0) pl.ap += config.scrollAP; });
+                            return `📜 展開【治癒卷軸】，全體存活勇者恢復 ${config.scrollAP} 點 AP！`;
+                        }
+                    } else {
+                        p.items.push(Object.assign({}, item));
+                        updateInventoryBtn();
+                        return `🎒 獲得【${item.name}】，已存入專屬背包！可手動選擇時機使用。`;
+                    }
+                }}
+            ]
+        }
+    ];
+
+    const BOSS_SKILLS = [
+        {
+            name: "🔥 滅世烈焰", icon: "🔥",
+            desc: "魔王引導全螢幕烈焰轟炸！對所有存活的勇者造成 2 點 AP 傷害！",
+            action: () => {
+                let msgs = [];
+                players.forEach(p => { if(p.ap > 0) { let res = loseAP(p, 2); if(res) msgs.push(res); } });
+                return "全體勇者失去了 2 點 AP！" + msgs.join("");
+            }
+        },
+        {
+            name: "🔮 精神蠶食", icon: "🔮",
+            desc: "魔王施展詛咒，鎖定目前隊伍中體力最高（最健康）的勇者摧毀精神！",
+            action: () => {
+                let sorted = [...players].filter(p => p.ap > 0).sort((a,b) => b.ap - a.ap);
+                if (sorted.length > 0) {
+                    let target = sorted[0];
+                    let msg = loseAP(target, 4);
+                    return `【${target.name}】承受了精神衝擊，失去了 4 點 AP！` + msg;
+                }
+                return "沒有合適的打擊目標。";
+            }
+        },
+        {
+            name: "🌋 地動山搖", icon: "🌋",
+            desc: "所有人被衝擊波震退 1 格，並受到 1 點 AP 的震盪傷害！",
+            action: () => {
+                let msgs = [];
+                players.forEach(p => {
+                    if(p.ap > 0) {
+                        let res = loseAP(p, 1);
+                        p.pos = (p.pos - 1 + boardData.length) % boardData.length;
+                        if(res) msgs.push(res);
+                    }
+                });
+                return "全員集體倒退 1 格，並扣除 1 點 AP！" + msgs.join("");
+            }
+        }
+    ];
+
+    (function initUI() {
+        generatePlayerInputs();
+    })();
+
+    function generatePlayerInputs() {
+        const count = parseInt(document.getElementById('player-count').value);
+        const container = document.getElementById('player-names-container');
+        container.innerHTML = '';
+        
+        for (let i = 0; i < count; i++) {
+            const group = document.createElement('div');
+            group.className = 'player-input-group';
+            
+            let colorVal = DEFAULT_COLORS[i % DEFAULT_COLORS.length];
+            
+            let avatarSelect = `<select id="p-avatar-${i}" style="width:60px;">`;
+            AVATARS.forEach(av => { avatarSelect += `<option value="${av}">${av}</option>`; });
+            avatarSelect += `</select>`;
+            
+            let classSelect = `<select id="p-class-${i}">`;
+            Object.values(CLASSES).forEach(c => { classSelect += `<option value="${c.id}">${c.icon} ${c.name}</option>`; });
+            classSelect += `</select>`;
+
+            // 新增顏色選取器
+            group.innerHTML = `
+                <input type="color" id="p-color-${i}" value="${colorVal}" title="選擇專屬代表色">
+                ${avatarSelect}
+                <input type="text" id="p-name-${i}" value="勇者 ${i+1}" maxlength="8">
+                ${classSelect}
+            `;
+            container.appendChild(group);
+            document.getElementById(`p-avatar-${i}`).selectedIndex = i % AVATARS.length;
+        }
+
+        document.getElementById('boss-hp').value = count * 800;
+    }
+
+    function loseAP(player, amount) {
+        let triggerMsg = "";
+        player.ap -= amount;
+        
+        if (player.ap <= 0) {
+            if (config.undyingWill && !player.undying_used) {
+                player.ap = 1;
+                player.undying_used = true;
+                player.buff_double_damage = true;
+                triggerMsg = `<br><span style="color:#f1c40f;">🔥 【不死意志】觸發！${player.name} 拒絕倒下，強制保留 1 AP 並獲得狂暴！</span>`;
+            } else {
+                player.ap = 0;
+            }
+        }
+        return triggerMsg;
+    }
+
+    function showMsg(text, duration=4000) {
+        const log = document.getElementById('message-log');
+        log.innerHTML = text; 
+        log.style.display = 'block';
+        setTimeout(() => log.style.display = 'none', duration);
+    }
+
+    function createDamageText(damage) {
+        const bossPanel = document.getElementById('boss-panel');
+        const el = document.createElement('div');
+        el.className = 'damage-text';
+        el.innerText = `-${damage}`;
+        el.style.left = '50%'; el.style.top = '60%';
+        bossPanel.appendChild(el);
+        
+        document.body.classList.add('screen-shake');
+        setTimeout(() => document.body.classList.remove('screen-shake'), 500);
+        setTimeout(() => el.remove(), 1200);
+    }
+
+    function prepareGame() {
+        const input = document.getElementById('word-input').value.trim();
+        if (!input) { alert("請輸入本課生字！"); return; }
+        
+        // 讀取進階設定
+        config.itemMode = document.getElementById('cfg-item-mode').value;
+        config.itemLevel = parseInt(document.getElementById('cfg-item-level').value);
+        config.eventFreq = parseInt(document.getElementById('cfg-event-freq').value);
+        let healVals = document.getElementById('cfg-heal-freq').value.split(',');
+        config.healFreq = parseInt(healVals[0]);
+        config.baseHeal = parseInt(healVals[1]);
+        config.undyingWill = document.getElementById('cfg-undying-will').value === 'true';
+        config.skipCost = parseInt(document.getElementById('cfg-skip-cost').value);
+        config.dmgMult = parseInt(document.getElementById('cfg-dmg-mult').value);
+        
+        // 根據 Level 設定道具威力
+        config.reviveAP = config.itemLevel === 1 ? 5 : (config.itemLevel === 2 ? 10 : 20);
+        config.scrollAP = config.itemLevel === 1 ? 2 : (config.itemLevel === 2 ? 5 : 10);
+
+        const initialAP = parseInt(document.getElementById('initial-ap').value) || 15;
+        const bossMax = parseInt(document.getElementById('boss-hp').value) || 3200;
+        const bossName = document.getElementById('boss-name-input').value.trim() || "混沌魔王 奧米加";
+        const count = parseInt(document.getElementById('player-count').value);
+
+        boss = { maxHp: bossMax, hp: bossMax, name: bossName };
+        players = [];
+
+        for (let i = 0; i < count; i++) {
+            let classId = document.getElementById(`p-class-${i}`).value;
+            players.push({
+                id: i, 
+                name: document.getElementById(`p-name-${i}`).value.trim() || `勇者 ${i+1}`, 
+                avatar: document.getElementById(`p-avatar-${i}`).value,
+                pClass: CLASSES[classId],
+                color: document.getElementById(`p-color-${i}`).value, // 讀取自訂顏色
+                pos: 0, 
+                ap: initialAP, 
+                dmgDealt: 0,
+                items: [],
+                undying_used: false,
+                buff_double_damage: false
+            });
+        }
+
+        boardData = [{ type: 'start', content: '🏰', strokes: 0 }];
+        const chars = input.replace(/[^\u4e00-\u9fa5]/g, '').split('');
+        
+        chars.forEach((char, index) => {
+            let strokes = 10;
+            try { strokes = cnchar.stroke(char) || 10; } catch(e) {}
+            boardData.push({ type: 'normal', content: char, strokes: strokes });
+            
+            // 使用自訂的頻率生成地圖
+            if (index > 0) {
+                if (index % config.healFreq === 0) boardData.push({ type: 'heal', content: '💧', strokes: 0 });
+                if (index % config.eventFreq === 0) boardData.push({ type: 'event', content: '❓', strokes: 0 });
+            }
+        });
+
+        // 更新 UI 提示文字
+        document.getElementById('skip-btn-text').innerText = config.skipCost > 0 ? `🛡️ 放棄攻擊 (耗 ${config.skipCost} AP)` : "🛡️ 放棄攻擊 (無消耗)";
+
+        document.getElementById('boss-name-display').innerText = `👿 ${boss.name}`;
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        
+        if (config.itemMode === 'manual') {
+            document.getElementById('inventory-btn').style.display = 'block';
+        }
+
+        gameActive = true;
+        currentPlayerIdx = 0;
+        
+        renderBoard();
+        updateGameUI();
+        updateTurnDisplay();
+    }
+
+    function updateGameUI() {
+        document.getElementById('boss-hp-current').innerText = Math.max(0, Math.floor(boss.hp));
+        document.getElementById('boss-hp-max').innerText = boss.maxHp;
+        
+        const hpPercent = Math.max(0, (boss.hp / boss.maxHp) * 100);
+        document.getElementById('boss-hp-bar').style.width = `${hpPercent}%`;
+
+        const container = document.getElementById('stats-panel');
+        container.innerHTML = '';
+
+        players.forEach((p, i) => {
+            const div = document.createElement('div');
+            div.className = `player-card ${i === currentPlayerIdx ? 'active' : ''}`;
+            if(p.ap <= 0) div.style.opacity = '0.4'; 
+            div.style.borderColor = p.color;
+            
+            let statusTags = "";
+            if(p.buff_double_damage) statusTags += `<div style="font-size:12px; color:#f1c40f; text-align:right;">🔥 狂暴狀態(雙倍傷)</div>`;
+            if(config.undyingWill && !p.undying_used && p.ap > 0) statusTags += `<div style="font-size:12px; color:#2ecc71; text-align:right;">🛡️ 不死意志(準備中)</div>`;
+            
+            // 職業徽章採用主色調搭配
+            div.innerHTML = `
+                <div class="player-header">
+                    <div class="player-avatar-disp token" style="background:${p.color}; border:none;">${p.avatar}</div>
+                    <div style="font-weight:bold; color:${p.color}; font-size:1.05em; max-width:80px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-shadow: 1px 1px 2px #000;">${p.name}</div>
+                    <div class="class-badge" style="background:rgba(0,0,0,0.5); border:1px solid ${p.color}; color:${p.color};">${p.pClass.icon} ${p.pClass.name}</div>
+                </div>
+                <div class="stat-row">
+                    <span>⚡ 體力:</span> <span class="stat-val" style="color:${p.ap<=0?'#ff4757':'#2ecc71'};">${p.ap} ${p.ap<=0?'(陣亡)':''}</span>
+                </div>
+                <div class="stat-row">
+                    <span>⚔️ 輸出:</span> <span class="stat-val" style="color:#ff4757;">${Math.floor(p.dmgDealt)}</span>
+                </div>
+                ${statusTags}
+            `;
+            container.appendChild(div);
+        });
+
+        updateInventoryBtn();
+    }
+
+    function updateInventoryBtn() {
+        if (config.itemMode === 'manual' && gameActive) {
+            const currentP = players[currentPlayerIdx];
+            document.getElementById('inventory-btn').innerText = `🎒 背包 (${currentP.items ? currentP.items.length : 0})`;
+        }
+    }
+
+    function openInventory() {
+        if(!gameActive) return;
+        const player = players[currentPlayerIdx];
+        const listDiv = document.getElementById('inventory-list');
+        listDiv.innerHTML = '';
+
+        if (!player.items || player.items.length === 0) {
+            listDiv.innerHTML = `<div style="text-align:center; color:#aaa; padding:20px;">背包空空如也...</div>`;
+        } else {
+            let targetOptions = '';
+            players.forEach(p => {
+                let status = p.ap <= 0 ? '(陣亡)' : `(${p.ap} AP)`;
+                targetOptions += `<option value="${p.id}">${p.avatar} ${p.name} ${status}</option>`;
+            });
+
+            player.items.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.style.cssText = "background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #2ecc71;";
+                
+                let targetSelector = item.id === 'scroll' 
+                    ? `<span style="color:#aaa; font-size:14px; flex:1;">效果對象：全體存活隊友</span>` 
+                    : `<select id="item-target-${index}" style="flex:1; padding:5px; background:#111; color:white; border:1px solid #555; border-radius:4px;">${targetOptions}</select>`;
+
+                itemDiv.innerHTML = `
+                    <div style="font-weight:bold; font-size:18px; color:#2ecc71; margin-bottom:5px;">${item.icon} ${item.name}</div>
+                    <div style="font-size:14px; color:#ddd; margin-bottom:10px;">${item.desc}</div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        ${targetSelector}
+                        <button class="btn btn-item" style="padding:6px 15px; font-size:14px;" onclick="useItem(${index})">使用</button>
+                    </div>
+                `;
+                listDiv.appendChild(itemDiv);
+            });
+        }
+        document.getElementById('inventory-modal').style.display = 'flex';
+    }
+
+    function closeInventory() {
+        document.getElementById('inventory-modal').style.display = 'none';
+    }
+
+    function useItem(itemIndex) {
+        const player = players[currentPlayerIdx];
+        const item = player.items[itemIndex];
+        let msg = "";
+        
+        if (item.id === 'scroll') {
+            players.forEach(p => { if(p.ap > 0) p.ap += config.scrollAP; });
+            msg = `📜 ${player.name} 使用了【治癒卷軸】！全體存活勇者恢復 ${config.scrollAP} 點 AP！`;
+        } else {
+            const targetId = parseInt(document.getElementById(`item-target-${itemIndex}`).value);
+            const targetPlayer = players.find(p => p.id === targetId);
+            
+            if (item.id === 'revive') {
+                let wasDead = targetPlayer.ap <= 0;
+                targetPlayer.ap += config.reviveAP;
+                msg = `✨ ${player.name} 對 ${targetPlayer.name} 使用了【復活藥水】！恢復了 ${config.reviveAP} AP！${wasDead ? '(已復活)' : ''}`;
+            } else if (item.id === 'berserk') {
+                targetPlayer.buff_double_damage = true;
+                msg = `🍷 ${player.name} 讓 ${targetPlayer.name} 喝下【狂暴藥劑】！下次攻擊傷害翻倍！`;
+            }
+        }
+        
+        player.items.splice(itemIndex, 1); 
+        closeInventory();
+        showMsg(msg, 4000);
+        updateGameUI();
+    }
+
+    function renderBoard() {
+        const container = document.getElementById('board');
+        container.innerHTML = '';
+        boardData.forEach((cell, idx) => {
+            const div = document.createElement('div');
+            div.className = `cell ${cell.type}`;
+            div.id = `cell-${idx}`;
+            
+            let html = `<div class="tokens-container" id="tokens-${idx}"></div>`;
+            
+            if (cell.type === 'normal') {
+                html += `<span class="cell-strokes">${cell.strokes}畫</span>`;
+                html += `<div class="cell-content">${cell.content}</div>`;
+            } else {
+                html += `<div class="cell-content">${cell.content}</div>`;
+            }
+            
+            div.innerHTML = html;
+            container.appendChild(div);
+        });
+        updatePlayerTokens();
+    }
+
+    function updatePlayerTokens() {
+        document.querySelectorAll('.tokens-container').forEach(el => el.innerHTML = '');
+        players.forEach(p => {
+            if(p.ap > 0 || boss.hp <= 0) { 
+                const container = document.getElementById(`tokens-${p.pos}`);
+                if (container) {
+                    const token = document.createElement('div');
+                    token.className = `token`;
+                    token.style.background = p.color;
+                    token.style.borderColor = '#fff';
+                    token.innerText = p.avatar;
+                    container.appendChild(token);
+                }
+            }
+        });
+    }
+
+    function updateTurnDisplay() {
+        if (!gameActive) return;
+        const p = players[currentPlayerIdx];
+        
+        if(p.ap <= 0) {
+            nextTurn(); 
+            return;
+        }
+        
+        const el = document.getElementById('turn-indicator');
+        el.innerHTML = `👉 輪到 <span style="color:${p.color}">${p.name}</span>`;
+        document.getElementById('roll-btn').disabled = false;
+        document.getElementById('inventory-btn').disabled = false;
+        updateGameUI();
+    }
+
+    function rollDice() {
+        if (!gameActive) return;
+        document.getElementById('roll-btn').disabled = true;
+        document.getElementById('inventory-btn').disabled = true;
+        
+        let rolls = 0;
+        let finalRoll = Math.floor(Math.random() * 6) + 1;
+        const diceDisplay = document.getElementById('dice-display');
+        
+        let interval = setInterval(() => {
+            diceDisplay.innerText = Math.floor(Math.random() * 6) + 1;
+            rolls++;
+            if (rolls > 10) {
+                clearInterval(interval);
+                diceDisplay.innerText = finalRoll;
+                setTimeout(() => movePlayer(finalRoll), 500);
+            }
+        }, 50);
+    }
+
+    function movePlayer(steps) {
+        const player = players[currentPlayerIdx];
+        
+        if (player.pClass.id === 'ranger') {
+            steps += 1;
+            showMsg(`🏹 觸發【靈動步伐】，額外前進 1 步！共移動 ${steps} 步。`, 2000);
+        }
+
+        player.pos = (player.pos + steps) % boardData.length;
+        updatePlayerTokens();
+        
+        setTimeout(() => handleCell(), 1000);
+    }
+
+    function handleCell() {
+        const player = players[currentPlayerIdx];
+        const cell = boardData[player.pos];
+
+        if (cell.type === 'start') {
+            showMsg("🏰 回到安全城鎮，平安無事。");
+            setTimeout(endPlayerAction, 1500);
+        } 
+        else if (cell.type === 'heal') {
+            let healAmount = config.baseHeal;
+            let msg = `💧 暢飲治癒泉水！恢復 ${healAmount} 點 AP！`;
+            if (player.pClass.id === 'mage') {
+                healAmount *= 2; // 法師翻倍
+                msg = `🧙‍♂️ 觸發【魔力湧動】！泉水魔能翻倍，共恢復 ${healAmount} 點 AP！`;
+            }
+            player.ap += healAmount;
+            showMsg(msg);
+            updateGameUI();
+            setTimeout(endPlayerAction, 2000);
+        }
+        else if (cell.type === 'event') {
+            triggerRandomEvent(player);
+        }
+        else if (cell.type === 'normal') {
+            document.getElementById('modal-char').innerText = cell.content;
+            document.getElementById('action-modal').style.display = 'flex';
+        }
+    }
+
+    function triggerRandomEvent(player) {
+        const eventData = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+        document.getElementById('event-title').innerText = eventData.title;
+        document.getElementById('event-desc').innerText = eventData.text;
+        
+        const btnGroup = document.getElementById('event-buttons');
+        btnGroup.innerHTML = '';
+        
+        eventData.choices.forEach((choice, idx) => {
+            const btn = document.createElement('button');
+            btn.className = idx === 0 ? 'btn' : 'btn btn-secondary';
+            btn.innerText = choice.text;
+            btn.onclick = () => {
+                document.getElementById('event-modal').style.display = 'none';
+                let resultMsg = choice.action(player);
+                showMsg(resultMsg, 4000);
+                updateGameUI();
+                setTimeout(endPlayerAction, 2500);
+            };
+            btnGroup.appendChild(btn);
+        });
+        
+        document.getElementById('event-modal').style.display = 'flex';
+    }
+
+    function confirmAction(isActing) {
+        document.getElementById('action-modal').style.display = 'none';
+        const player = players[currentPlayerIdx];
+        const cell = boardData[player.pos];
+
+        if (isActing) {
+            if (player.ap <= 0) {
+                showMsg("AP 不足，無法詠唱！");
+            } else {
+                let apMsg = loseAP(player, 1);
+                
+                let damage = cell.strokes * config.dmgMult; // 動態倍率
+                let msgs = [`詠唱成功！基礎傷 ${damage}`];
+
+                if (player.pClass.id === 'warrior') {
+                    damage += 30;
+                    msgs.push("🗡️【物理精通】追加 30 實傷");
+                }
+
+                if (player.buff_double_damage) {
+                    damage *= 2;
+                    player.buff_double_damage = false;
+                    msgs.push("🔥 觸發狂暴！傷害直接翻倍！");
+                }
+
+                if (player.pClass.id === 'paladin') {
+                    damage = Math.floor(damage * 1.2);
+                    msgs.push("🛡️【神聖信仰】總傷提升 20%");
+                }
+                
+                player.dmgDealt += damage;
+                boss.hp -= damage;
+                
+                showMsg(`💥 ${msgs.join(" | ")}！共造成了 ${damage} 點傷害！${apMsg}`, 4500);
+                createDamageText(damage);
+            }
+        } else {
+            // 放棄攻擊判定是否扣除 AP
+            if (config.skipCost > 0) {
+                let apMsg = loseAP(player, config.skipCost);
+                showMsg(`🛡️ 放棄攻擊，受懲罰扣除 ${config.skipCost} 點 AP。${apMsg}`);
+            } else {
+                showMsg("🛡️ 放棄攻擊，保留體力。");
+            }
+        }
+        
+        updateGameUI();
+        setTimeout(endPlayerAction, 3000);
+    }
+
+    function endPlayerAction() {
+        if (checkGameEnd()) return;
+        nextTurn();
+    }
+
+    function nextTurn() {
+        currentPlayerIdx = (currentPlayerIdx + 1) % players.length;
+        
+        if (currentPlayerIdx === 0) {
+            triggerBossTurn();
+        } else {
+            if (players[currentPlayerIdx].ap <= 0) {
+                nextTurn(); 
+            } else {
+                updateTurnDisplay();
+            }
+        }
+    }
+
+    function triggerBossTurn() {
+        if (!gameActive) return;
+        if (players.every(p => p.ap <= 0)) { checkGameEnd(); return; }
+        
+        const skill = BOSS_SKILLS[Math.floor(Math.random() * BOSS_SKILLS.length)];
+        
+        document.getElementById('boss-attack-title').innerText = `👿 ${boss.name} 的逆襲禁咒！`;
+        document.getElementById('boss-skill-icon').innerText = skill.icon;
+        
+        const resultText = skill.action();
+        
+        document.getElementById('boss-attack-desc').innerHTML = `
+            <span style="color:#ff4757; font-size:22px; font-weight:bold;">【${skill.name}】</span><br><br>
+            <span style="color:#ccc;">${skill.desc}</span><br><br>
+            <span style="color:#f1c40f; font-weight:bold;">👉 戰局異動：${resultText}</span>
+        `;
+        
+        document.getElementById('boss-attack-modal').style.display = 'flex';
+        document.body.classList.add('screen-shake');
+        setTimeout(() => document.body.classList.remove('screen-shake'), 600);
+        
+        updateGameUI();
+        renderBoard(); 
+    }
+
+    function closeBossModal() {
+        document.getElementById('boss-attack-modal').style.display = 'none';
+        if (checkGameEnd()) return;
+        if (players[currentPlayerIdx].ap <= 0) nextTurn();
+        else updateTurnDisplay();
+    }
+
+    function checkGameEnd() {
+        if (boss.hp <= 0) { endGame(true); return true; }
+        if (players.every(p => p.ap <= 0)) { endGame(false); return true; }
+        return false;
+    }
+
+    function endGame(isVictory) {
+        gameActive = false;
+        const modal = document.getElementById('end-modal');
+        const display = document.getElementById('winner-display');
+        const dmgBoard = document.getElementById('damage-board');
+        
+        if (isVictory) {
+            document.getElementById('end-title').innerHTML = "🎉 討伐成功！";
+            document.getElementById('end-title').style.color = "#2ecc71";
+            display.innerHTML = `強大的【${boss.name}】已被徹底擊敗，世界恢復了和平！<br>所有勇者的功績將流傳千古！`;
+        } else {
+            document.getElementById('end-title').innerHTML = "☠️ 全軍覆沒...";
+            document.getElementById('end-title').style.color = "#ff4757";
+            display.innerHTML = `所有勇者都耗盡了最後一絲體力...<br>【${boss.name}】的黑暗陰影將永遠籠罩這片大地。`;
+        }
+        
+        let sortedPlayers = [...players].sort((a, b) => b.dmgDealt - a.dmgDealt);
+        let boardHtml = `<div style="text-align:center; color:var(--gold); margin-bottom:10px; font-weight:bold;">⚔️ 勇者輸出排行榜 ⚔️</div>`;
+        sortedPlayers.forEach((p, idx) => {
+            let mvpIcon = idx === 0 && isVictory ? '👑 MVP' : `#${idx+1}`;
+            boardHtml += `
+            <div style="display:flex; justify-content:space-between; margin:5px 0; border-bottom:1px dashed #555; padding-bottom:5px;">
+                <span>${mvpIcon} ${p.avatar} <span style="color:${p.color}">${p.name}</span> <span style="font-size:12px;color:#aaa;">(${p.pClass.name})</span></span>
+                <span style="color:#ff4757; font-weight:bold;">${Math.floor(p.dmgDealt)} 傷害</span>
+            </div>`;
+        });
+        
+        dmgBoard.innerHTML = boardHtml;
+        modal.style.display = 'flex';
+    }
+</script>
+</body>
+</html>
