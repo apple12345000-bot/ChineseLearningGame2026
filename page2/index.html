@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📜 公會懸賞任務 - 生字英雄傳</title>
+<script src="https://cdn.jsdelivr.net/npm/cnchar/cnchar.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cnchar-trad/cnchar.trad.min.js"></script>
+
+<style>
+    :root { 
+        --bg-color: #1a1613; /* 闇黑酒館風 */
+        --panel-bg: #2a201b;
+        --paper-bg: #f5e6c4;
+        --wood-dark: #3d2f26;
+        --gold: #f39c12;
+        --text-light: #e6dfd3;
+        --text-dark: #2c1d11;
+        --highlight: #e74c3c;
+    }
+    
+    body { font-family: 'Microsoft JhengHei', sans-serif; background: var(--bg-color); color: var(--text-light); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; background-image: radial-gradient(#2d221c 1px, transparent 1px); background-size: 20px 20px; }
+    h1 { color: var(--gold); margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); text-align: center; letter-spacing: 2px; }
+    
+    /* Setup Screen */
+    #setup-screen { background: var(--panel-bg); padding: 25px; border-radius: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.7); border: 2px solid var(--wood-dark); max-width: 950px; width: 100%; box-sizing: border-box; }
+    
+    .setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+    .setup-group { border: 1px solid #544135; border-radius: 10px; padding: 15px; background: rgba(0,0,0,0.2); height: 100%; box-sizing: border-box; }
+    .setup-title { font-size: 1.2em; font-weight: bold; color: var(--gold); margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid #544135; padding-bottom: 8px; text-shadow: 1px 1px 2px #000; }
+    
+    .player-setup-area { max-height: 320px; overflow-y: auto; padding-right: 10px; }
+    .player-input-group { display: flex; align-items: center; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; background: rgba(255,255,255,0.04); padding: 10px; border-radius: 8px; border: 1px solid #4a382d; transition: 0.3s; }
+    .player-input-group label { font-weight: bold; font-size: 0.9em; min-width: 50px; color: #bbb; }
+    .player-input-group input[type="text"] { flex-grow: 1; min-width: 90px; padding: 6px; border: 1px solid #544135; border-radius: 4px; background: #1a1310; color: white; }
+    .player-input-group select { padding: 6px; border-radius: 4px; border: 1px solid #544135; background: #1a1310; color: white; font-size: 15px; }
+    
+    .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-size: 0.95em; flex-wrap: wrap; gap: 10px; }
+    .setting-row input[type="number"], .setting-row input[type="text"], .setting-row select { padding: 8px; border-radius: 4px; border: 1px solid #544135; background: #1a1310; color: white; font-size: 15px; }
+    
+    .info-box { background: rgba(243, 156, 18, 0.08); border-left: 4px solid var(--gold); padding: 12px; font-size: 0.9em; margin-top: 15px; border-radius: 0 5px 5px 0; line-height: 1.6; grid-column: span 2; color: #d6cbb7; }
+    .quick-tags { display: flex; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+    .tag-btn { background: #1a1310; border: 1px solid #544135; color: #ccc; padding: 4px 10px; border-radius: 4px; font-size: 13px; cursor: pointer; transition: 0.2s;}
+    .tag-btn:hover { background: #2d2019; color: #fff; border-color: var(--gold); }
+
+    .btn { background: linear-gradient(135deg, #d35400, #a04000); color: white; border: 1px solid #e67e22; padding: 10px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.4); text-shadow: 1px 1px 2px #000; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.5); filter: brightness(1.15); }
+    .btn:active { transform: translateY(1px); }
+    .btn:disabled { background: #444; border-color: #333; cursor: not-allowed; color: #777; text-shadow: none; box-shadow: none; }
+    .btn-secondary { background: linear-gradient(135deg, #5a5048, #3d352e); border-color: #706257; }
+    .btn-start { width: 100%; font-size: 20px; padding: 15px; margin-top: 20px; letter-spacing: 2px;}
+
+    /* Game Screen */
+    #game-screen { display: none; width: 100%; max-width: 1200px; flex-direction: column; align-items: center; padding-bottom: 100px; }
+    
+    /* Bounty Board */
+    #bounty-board-title { color: var(--gold); margin: 0 0 10px 0; text-shadow: 2px 2px 4px #000; letter-spacing: 1px; width: 100%; text-align: left;}
+    #bounty-board { width: 100%; display: flex; gap: 15px; margin-bottom: 20px; overflow-x: auto; padding: 10px 0; box-sizing: border-box; }
+    .bounty-card { background: var(--paper-bg); color: var(--text-dark); min-width: 260px; flex: 1; border-radius: 8px; padding: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.6); border: 2px solid #c8b894; position: relative; display: flex; flex-direction: column; justify-content: space-between; background-image: linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px); background-size: 100% 1.5em; line-height: 1.5em; box-sizing: border-box; }
+    .bounty-card::before { content: '📌'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); font-size: 22px; filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.4)); }
+    .bounty-title { font-weight: bold; font-size: 1.15em; border-bottom: 2px dashed #cbd2a4; padding-bottom: 5px; margin-bottom: 10px; color: #7d3c98; text-align: center; margin-top: 5px; }
+    .bounty-desc { font-size: 0.95em; margin-bottom: 15px; flex-grow: 1; font-weight: bold; color: #34495e;}
+    .bounty-reward { background: rgba(211, 84, 0, 0.1); padding: 6px; border-radius: 5px; text-align: center; font-weight: bold; color: #b03a2e; font-size: 0.95em; border: 1px dashed #e67e22; }
+
+    /* Score and Info Panel */
+    #scoreboard-panel { width: 100%; background: #221a16; padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 6px 20px rgba(0,0,0,0.5); border: 2px solid var(--wood-dark); box-sizing: border-box; text-align: center; font-size: 16px; color: #ccc; }
+
+    /* Player Stats */
+    .stats-panel { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; width: 100%; margin-bottom: 20px; }
+    .player-card { background: var(--panel-bg); padding: 15px; border-radius: 12px; border: 2px solid var(--wood-dark); transition: 0.3s; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.4); box-sizing: border-box;}
+    .player-card.active { transform: translateY(-5px); border-color: var(--gold); box-shadow: 0 0 20px rgba(243, 156, 18, 0.4); background: #382b24; }
+    
+    .player-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; border-bottom: 1px solid #544135; padding-bottom: 8px; }
+    .player-avatar-disp { font-size: 26px; background: rgba(0,0,0,0.4); border-radius: 50%; width: 42px; height: 42px; display: flex; justify-content: center; align-items: center; border: 2px solid #544135; }
+    
+    .stat-row { font-size: 14px; margin: 6px 0; display: flex; justify-content: space-between; align-items: center; color: #cbd5e1; }
+    .stat-val { font-weight: bold; color: white; font-size: 16px; }
+    .fame-val { color: var(--gold); font-size: 18px; font-weight: bold; text-shadow: 0 0 5px rgba(243, 156, 18, 0.3); }
+    
+    .inventory-box { background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; margin-top: 8px; border: 1px solid #4a382d; }
+    .inv-title { font-size: 12px; color: #a1887f; margin-bottom: 5px; text-align: center; font-weight: bold; letter-spacing: 1px; }
+    .inv-items { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; font-size: 13px; margin-top: 5px;}
+    .inv-chip { background: #3a2f28; padding: 2px 6px; border-radius: 12px; border: 1px solid #544135; color: #e6dfd3; font-weight: bold;}
+
+    /* Board Map */
+    .board-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px; width: 100%; padding: 20px; background: #171210; border-radius: 15px; border: 3px solid var(--wood-dark); box-shadow: inset 0 0 25px rgba(0,0,0,0.8); box-sizing: border-box; }
+    
+    .cell { background: var(--panel-bg); aspect-ratio: 1; border-radius: 12px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; border: 2px solid #4a382d; transition: 0.3s; color: #e2e8f0; box-shadow: 0 4px 0 #110d0b; box-sizing: border-box; }
+    .cell.start { background: rgba(46, 204, 113, 0.12); border-color: #2ecc71; color: #abebc6; }
+    
+    /* Target Node (Assassination/Extermination Bounty Card Link) */
+    .cell.target-node { border-color: var(--highlight); box-shadow: 0 0 15px rgba(231, 76, 60, 0.6), 0 4px 0 #922b21; animation: pulse-glow 2s infinite; }
+    @keyframes pulse-glow { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7), 0 4px 0 #922b21; } 70% { box-shadow: 0 0 15px 10px rgba(231, 76, 60, 0), 0 4px 0 #922b21; } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0), 0 4px 0 #922b21; } }
+
+    .target-icon { position: absolute; top: -10px; right: -10px; font-size: 22px; filter: drop-shadow(1px 2px 3px black); z-index: 5; }
+    .cell-strokes { font-size: 11px; color: #a1887f; position: absolute; bottom: 5px; background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 10px; font-weight: normal; }
+    .cell-content { z-index: 2; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+    
+    .tokens-container { position: absolute; top: 4px; left: 4px; right: 4px; display: flex; gap: 2px; flex-wrap: wrap; z-index: 10; pointer-events: none; justify-content: flex-start; }
+    .token { width: 26px; height: 26px; border-radius: 50%; display:flex; justify-content:center; align-items:center; font-size:15px; box-shadow: 0 3px 5px rgba(0,0,0,0.7); border: 2px solid white; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); color: #fff; }
+
+    /* Controls & Modals */
+    .controls { position: fixed; bottom: 20px; background: rgba(42, 32, 27, 0.96); padding: 12px 25px; border-radius: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 2px solid var(--gold); display: flex; gap: 20px; align-items: center; z-index: 100; backdrop-filter: blur(5px); }
+     shreds { font-size: 38px; font-weight: bold; width: 45px; text-align: center; color: var(--gold); }
+    #dice-display { font-size: 36px; font-weight: bold; width: 45px; text-align: center; color: var(--gold); text-shadow: 0 0 10px rgba(243,156,18,0.4); }
+    
+    #message-log { position: fixed; top: 40px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); border: 2px solid var(--gold); color: #fff; padding: 15px 30px; border-radius: 10px; z-index: 200; display: none; text-align: center; font-size: 18px; font-weight: bold; box-shadow: 0 0 20px rgba(243,156,18,0.4); }
+    
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 300; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+    .modal { background: var(--panel-bg); padding: 25px; border-radius: 15px; text-align: center; max-width: 450px; width: 90%; box-shadow: 0 0 30px rgba(0,0,0,0.8); border: 2px solid var(--gold); color: white; box-sizing: border-box;}
+    .modal-title { margin-top: 0; font-size: 1.5em; border-bottom: 1px solid #544135; padding-bottom: 12px; color: var(--gold); }
+    .modal-char { font-size: 65px; display: block; margin: 15px 0; font-weight: bold; text-shadow: 0 0 15px rgba(255,255,255,0.2); color: white; }
+    
+    .floating-fame { position: absolute; color: var(--gold); font-weight: bold; font-size: 32px; text-shadow: 2px 2px 0 #000, 0 0 10px var(--gold); animation: floatUp 1.5s ease-out forwards; z-index: 500; pointer-events: none; }
+    @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-70px) scale(1.2); opacity: 0; } }
+
+</style>
+</head>
+<body>
+
+    <h1>📜 公會懸賞任務 - 生字英雄傳</h1>
+
+    <div id="setup-screen">
+        <div class="setup-grid">
+            <div class="setup-group">
+                <div class="setup-title">⛺ 1. 冒險小隊登記</div>
+                <div class="setting-row">
+                    <label>小隊總人數：
+                        <select id="player-count" onchange="generatePlayerInputs()">
+                            <option value="2">2 位冒險者</option>
+                            <option value="3" selected>3 位冒險者</option>
+                            <option value="4">4 位冒險者</option>
+                            <option value="5">5 位冒險者</option>
+                        </select>
+                    </label>
+                </div>
+                <div id="player-names-container" class="player-setup-area" style="margin-top: 15px;"></div>
+            </div>
+
+            <div class="setup-group">
+                <div class="setup-title">🗺️ 2. 戰場高級設定</div>
+                <div class="setting-row" style="width: 100%;">
+                    <label style="width: 100%;">發現的古代碑文 (本課生字)：
+                        <input type="text" id="word-input" placeholder="請輸入本課生字，例如：員社教導演..." style="width:100%; box-sizing: border-box; margin-top:5px;">
+                    </label>
+                    <div class="quick-tags">
+                        <span style="font-size:12px; color:#aaa; align-self:center;">範例：</span>
+                        <button type="button" class="tag-btn" onclick="fillExample('智慧科技創新繁榮')">科技類</button>
+                        <button type="button" class="tag-btn" onclick="fillExample('英雄傳奇盛宴乾坤')">古典類</button>
+                        <button type="button" class="tag-btn" onclick="fillExample('山高水長風光明媚')">自然類</button>
+                    </div>
+                </div>
+
+                <div class="setting-row" style="margin-top: 10px; border-top: 1px dashed #544135; padding-top: 10px;">
+                    <label style="color: var(--gold); font-weight: bold;">🌟 遊戲難度預設：
+                        <select id="game-difficulty" style="width:180px; margin-left: 10px;" onchange="applyDifficulty()">
+                            <option value="easy">🟢 簡單 (高AP / 80聲望 / 15圈)</option>
+                            <option value="normal" selected>🟡 普通 (標準 / 120聲望 / 20圈)</option>
+                            <option value="hard">🔴 困難 (低AP / 150聲望 / 25圈)</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="setting-row">
+                    <label>初始行動體力 (AP)：<input type="number" id="initial-ap" value="15" min="5" max="50" style="width:60px;"> 點</label>
+                    <label>🏆 勝利目標聲望：<input type="number" id="target-fame" value="120" min="40" max="500" style="width:65px;"> 分</label>
+                </div>
+                <div class="setting-row">
+                    <label>回合圈數限制：<input type="number" id="max-turns" value="20" min="5" max="50" style="width:60px;"> 圈</label>
+                    <label>返抵公會補給 AP：<input type="number" id="camp-ap-recovery" value="2" min="0" max="5" style="width:60px;"> 點</label>
+                </div>
+                <div class="setting-row">
+                    <label>生字挑戰難度：
+                        <select id="challenge-mode">
+                            <option value="vocab" selected>基礎造詞 (大聲唸出詞語)</option>
+                            <option value="idiom">進階成語 (含該字的四字成語)</option>
+                            <option value="sentence">創意造句 (包含該字的完整句子)</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <b>🎯 懸賞模式規則說明：</b><br>
+            1. <b>採集生字能量：</b> 走到各生字格，依難度要求完成生字挑戰即可獲得該字的「筆畫能量」與「字元背包」。<br>
+            2. <b>完成懸賞佈告：</b> 頂部永遠維持 3 張懸賞單。<br>
+            &nbsp;&nbsp;&nbsp;- 【收集類（魔力/能量/博學/詞彙）】若身上背包資源充足，回合結束時會<b>自動扣除並提交</b>，獲得高額聲望！<br>
+            &nbsp;&nbsp;&nbsp;- 【討伐類（指定討伐）】地圖上會出現閃爍的 🎯 標記，踩中該格並完成挑戰，能一舉斬獲極大聲望！<br>
+            3. <b>勝負與圈數判定：</b> 率先達到「目標聲望」者獲勝！若戰局達到<b>回合圈數上限</b>或全員 AP 歸零，則由聲望最高者奪下冠軍！
+        </div>
+
+        <button class="btn btn-start" onclick="prepareGame()">🚀 承接委託，出發探險！</button>
+    </div>
+
+    <div id="game-screen">
+        
+        <h2 id="bounty-board-title">📌 公會懸賞佈告欄</h2>
+        <div id="bounty-board">
+            </div>
+
+        <div id="scoreboard-panel">
+            ⏳ 戰局剩餘時間：<span id="turns-left-disp" style="color: white; font-weight: bold; font-size: 1.1em;">--</span> 圈 
+            &nbsp;&nbsp;|&nbsp;&nbsp; 🏆 勝利要求：達到 <span id="target-fame-disp" style="color: var(--gold); font-weight: bold;">--</span> 聲望
+        </div>
+
+        <div class="stats-panel" id="stats-panel"></div>
+        
+        <div class="board-container" id="board"></div>
+        
+        <div class="controls">
+            <div id="turn-indicator" style="font-weight: bold; color: #fff; font-size: 1.2em; min-width: 170px; text-shadow: 1px 1px 2px #000;">準備中...</div>
+            <button class="btn" id="roll-btn" onclick="rollDice()" style="font-size: 18px; padding: 12px 25px;">🎲 擲骰移動</button>
+            <span id="dice-display">?</span>
+        </div>
+    </div>
+
+    <div id="message-log">訊息提示</div>
+
+    <div class="modal-overlay" id="action-modal">
+        <div class="modal">
+            <h2 class="modal-title" id="action-title">✨ 發現能量節點</h2>
+            <span class="modal-char" id="modal-char">字</span>
+            <p id="modal-desc" style="font-size: 18px; font-weight: bold; color: #fff;">任務挑戰</p>
+            <p style="color: #bbb; font-size: 14px;">(此行動將消耗 1 點 AP)</p>
+            
+            <div style="margin-top: 25px; display: flex; gap: 10px; justify-content: center;">
+                <button class="btn" id="btn-confirm-action" style="flex:1; font-size:18px;" onclick="confirmAction(true)">⛏️ 成功採集！</button>
+                <button class="btn btn-secondary" style="flex:0.8;" onclick="confirmAction(false)">🛡️ 放棄行動</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="end-modal">
+        <div class="modal" style="max-width: 520px;">
+            <h2 class="modal-title" id="end-title" style="font-size: 2.2em;">🏆 委託結算</h2>
+            <div id="winner-display" style="text-align: left; margin: 20px 0; max-height: 320px; overflow-y: auto; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; border: 1px solid #544135;"></div>
+            <button class="btn" style="width:100%; font-size: 18px;" onclick="location.reload()">🔄 返回公會 (重新開始)</button>
+        </div>
+    </div>
+
+<script>
+    // 頭像圖騰選單庫
+    const AVATARS = ['🧑‍🎤', '🥷', '🧙‍♂️', '🧝‍♀️', '🦁', '🦊', '🦉', '🦄', '🤖', '🦹‍♂️', '🐼', '🐲', '👻', '🤠', '👽', '🦖'];
+    // 辨識度高色彩線條
+    const PLAYER_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#e67e22'];
+    
+    // 5 大種類懸賞任務範本
+    const BOUNTY_TEMPLATES = [
+        { type: 'stroke', title: '🔮 魔力收集', desc: '累積提交 [REQ] 畫生字能量', reqBase: 25, rewardBase: 30 },
+        { type: 'stroke', title: '🌟 能量萃取', desc: '累積提交 [REQ] 畫生字能量', reqBase: 40, rewardBase: 50 },
+        { type: 'word', title: '📜 博學多聞', desc: '收集 [REQ] 個不同的生字字元', reqBase: 3, rewardBase: 40 },
+        { type: 'word', title: '📚 詞彙大師', desc: '收集 [REQ] 個不同的生字字元', reqBase: 5, rewardBase: 70 },
+        { type: 'target', title: '⚔️ 指定討伐', desc: '前往並淨化指定生字區域：[TARGET]', reqBase: 1, rewardBase: 60 }
+    ];
+
+    let players = [], boardData = []; 
+    let activeBounties = [];
+    let currentPlayerIdx = 0, gameActive = false;
+    let targetFame = 120, globalMaxTurns = 20, currentTurnCount = 1;
+    let bountyIdCounter = 0;
+
+    // 初始化 UI
+    (function initUI() {
+        generatePlayerInputs();
+    })();
+
+    // 難度切換預設值調配
+    function applyDifficulty() {
+        const diff = document.getElementById('game-difficulty').value;
+        const apInput = document.getElementById('initial-ap');
+        const fameInput = document.getElementById('target-fame');
+        const turnsInput = document.getElementById('max-turns');
+        
+        if (diff === 'easy') {
+            apInput.value = 20; fameInput.value = 80; turnsInput.value = 15;
+        } else if (diff === 'normal') {
+            apInput.value = 15; fameInput.value = 120; turnsInput.value = 20;
+        } else if (diff === 'hard') {
+            apInput.value = 10; fameInput.value = 150; turnsInput.value = 25;
+        }
+    }
+
+    function fillExample(str) {
+        document.getElementById('word-input').value = str;
+    }
+
+    function generatePlayerInputs() {
+        const count = parseInt(document.getElementById('player-count').value);
+        const container = document.getElementById('player-names-container');
+        container.innerHTML = '';
+        
+        for (let i = 0; i < count; i++) {
+            const group = document.createElement('div');
+            group.className = 'player-input-group';
+            
+            // 自訂頭像圖騰選單生成
+            let avatarOptions = AVATARS.map((av, idx) => 
+                `<option value="${av}" ${i % AVATARS.length === idx ? 'selected' : ''}>${av}</option>`
+            ).join('');
+
+            group.innerHTML = `
+                <label>隊員 ${i+1}:</label>
+                <select id="p-avatar-${i}" style="font-size: 16px; background:#1a1310; color:white; border:1px solid #544135; border-radius:4px; padding:4px; width:60px; margin-right:5px;">
+                    ${avatarOptions}
+                </select>
+                <input type="text" id="p-name-${i}" value="冒險者 ${i+1}" maxlength="8">
+            `;
+            container.appendChild(group);
+        }
+    }
+
+    function showMsg(text, duration=2500) {
+        const log = document.getElementById('message-log');
+        log.innerHTML = text; 
+        log.style.display = 'block';
+        setTimeout(() => log.style.display = 'none', duration);
+    }
+
+    // 聲望取得時精美網頁上升動畫
+    function createFloatingText(text, x, y) {
+        const el = document.createElement('div');
+        el.className = 'floating-fame';
+        el.innerText = text;
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 1500);
+    }
+
+    function prepareGame() {
+        const input = document.getElementById('word-input').value.trim();
+        if (!input || input.length < 2) { alert("請至少輸入 2 個以上的生字建立地圖！"); return; }
+        
+        const initialAP = parseInt(document.getElementById('initial-ap').value) || 15;
+        targetFame = parseInt(document.getElementById('target-fame').value) || 120;
+        globalMaxTurns = parseInt(document.getElementById('max-turns').value) || 20;
+        const count = parseInt(document.getElementById('player-count').value);
+
+        players = [];
+        for (let i = 0; i < count; i++) {
+            players.push({
+                id: i, 
+                name: document.getElementById(`p-name-${i}`).value.trim() || `冒險者 ${i+1}`, 
+                avatar: document.getElementById(`p-avatar-${i}`).value,
+                color: PLAYER_COLORS[i % PLAYER_COLORS.length],
+                pos: 0, 
+                ap: initialAP, 
+                fame: 0,
+                strokes: 0,
+                words: []
+            });
+        }
+
+        // 建立地圖格子結構
+        boardData = [{ type: 'start', content: '公會', strokes: 0 }];
+        const chars = input.replace(/[^\u4e00-\u9fa5]/g, '').split('');
+        
+        chars.forEach(char => {
+            let strokes = 10;
+            try { strokes = cnchar.stroke(char) || 10; } catch(e) {}
+            boardData.push({ type: 'normal', content: char, strokes: strokes });
+        });
+
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        
+        gameActive = true;
+        currentPlayerIdx = 0;
+        currentTurnCount = 1;
+        
+        initBounties();
+        renderBoard();
+        updateGameUI();
+        updateTurnDisplay();
+    }
+
+    // --- 懸賞單核心系統 ---
+    function initBounties() {
+        activeBounties = [];
+        bountyIdCounter = 0;
+        for(let i=0; i<3; i++) spawnBounty();
+        renderBounties();
+    }
+
+    function spawnBounty() {
+        let tmpl = BOUNTY_TEMPLATES[Math.floor(Math.random() * BOUNTY_TEMPLATES.length)];
+        let bounty = { id: bountyIdCounter++, type: tmpl.type, title: tmpl.title, reward: tmpl.rewardBase };
+        
+        if (tmpl.type === 'stroke') {
+            bounty.reqVal = tmpl.reqBase + Math.floor(Math.random() * 12 - 6); 
+            bounty.desc = tmpl.desc.replace('[REQ]', bounty.reqVal);
+        } else if (tmpl.type === 'word') {
+            bounty.reqVal = tmpl.reqBase;
+            bounty.desc = tmpl.desc.replace('[REQ]', bounty.reqVal);
+        } else if (tmpl.type === 'target') {
+            let normalTiles = boardData.map((c, i) => ({c, i})).filter(x => x.c.type === 'normal');
+            let target = normalTiles[Math.floor(Math.random() * normalTiles.length)];
+            bounty.targetIdx = target.i;
+            bounty.desc = tmpl.desc.replace('[TARGET]', `「${target.c.content}」`);
+        }
+        activeBounties.push(bounty);
+    }
+
+    function renderBounties() {
+        const board = document.getElementById('bounty-board');
+        board.innerHTML = '';
+        activeBounties.forEach(b => {
+            const el = document.createElement('div');
+            el.className = 'bounty-card';
+            el.innerHTML = `
+                <div class="bounty-title">${b.title}</div>
+                <div class="bounty-desc">${b.desc}</div>
+                <div class="bounty-reward">💰 獎勵：${b.reward} 聲望</div>
+            `;
+            board.appendChild(el);
+        });
+    }
+
+    // 回合結束自動匹配身上的資源提交懸賞
+    function checkBountiesAuto(player) {
+        let bountiesCompleted = 0;
+        
+        for (let i = activeBounties.length - 1; i >= 0; i--) {
+            let b = activeBounties[i];
+            let completed = false;
+            
+            if (b.type === 'stroke' && player.strokes >= b.reqVal) {
+                player.strokes -= b.reqVal;
+                completed = true;
+            } else if (b.type === 'word' && player.words.length >= b.reqVal) {
+                player.words.splice(0, b.reqVal); // 繳出最前排的字元
+                completed = true;
+            }
+
+            if (completed) {
+                player.fame += b.reward;
+                bountiesCompleted++;
+                showMsg(`🎉 成功提交！${player.name} 完成懸賞【${b.title}】，獲得 ${b.reward} 聲望！`, 3500);
+                activeBounties.splice(i, 1);
+                spawnBounty();
+            }
+        }
+        
+        if (bountiesCompleted > 0) {
+            renderBounties();
+            renderBoard(); // 刷新地圖討伐 🎯
+            updateGameUI();
+        }
+    }
+
+    // --- 遊戲渲染流程介面 ---
+    function updateGameUI() {
+        document.getElementById('turns-left-disp').innerText = Math.max(0, globalMaxTurns - currentTurnCount + 1);
+        document.getElementById('target-fame-disp').innerText = targetFame;
+
+        const container = document.getElementById('stats-panel');
+        container.innerHTML = '';
+
+        players.forEach((p, i) => {
+            const div = document.createElement('div');
+            div.className = `player-card ${i === currentPlayerIdx ? 'active' : ''}`;
+            if(p.ap <= 0) div.style.opacity = '0.4';
+            div.style.borderColor = p.color;
+            
+            div.innerHTML = `
+                <div class="player-header">
+                    <div class="player-avatar-disp" style="background:${p.color}">${p.avatar}</div>
+                    <div style="font-weight:bold; color:${p.color}; font-size:1.1em;">${p.name}</div>
+                </div>
+                <div class="stat-row">
+                    <span>⚡ 體力 (AP):</span> <span class="stat-val" style="color:${p.ap<=0?'#e74c3c':'#2ecc71'};">${p.ap}</span>
+                </div>
+                <div class="stat-row">
+                    <span>🏆 聲望值:</span> <span class="fame-val">${p.fame} / ${targetFame}</span>
+                </div>
+                <div class="inventory-box">
+                    <div class="inv-title">🎒 冒險採集背包</div>
+                    <div class="stat-row" style="margin:2px 0; font-size:12px; color:#aaa;">
+                        <span>筆畫能量: <b style="color:#fff;">${p.strokes}</b> 畫</span>
+                    </div>
+                    <div class="inv-items">
+                        ${p.words.map(w => `<span class="inv-chip">${w}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function renderBoard() {
+        const container = document.getElementById('board');
+        container.innerHTML = '';
+        
+        // 抓取目前所有懸賞單內，屬於討伐任務 🎯 的格子索引清單
+        let targetIndices = activeBounties.filter(b => b.type === 'target').map(b => b.targetIdx);
+
+        boardData.forEach((cell, idx) => {
+            const div = document.createElement('div');
+            let isTarget = targetIndices.includes(idx);
+            
+            div.className = `cell ${cell.type === 'start' ? 'start' : ''}`;
+            if (isTarget) div.classList.add('target-node');
+            div.id = `cell-${idx}`;
+            
+            let html = `<div class="tokens-container" id="tokens-${idx}"></div>`;
+            
+            if (isTarget) {
+                html += `<div class="target-icon">🎯</div>`;
+            }
+
+            if (cell.type === 'normal') {
+                html += `<span class="cell-strokes">${cell.strokes}畫</span>`;
+                html += `<div class="cell-content">${cell.content}</div>`;
+            } else {
+                html += `<div class="cell-content">${cell.content}</div>`;
+            }
+            
+            div.innerHTML = html;
+            container.appendChild(div);
+        });
+        updatePlayerTokens();
+    }
+
+    function updatePlayerTokens() {
+        document.querySelectorAll('.tokens-container').forEach(el => el.innerHTML = '');
+        players.forEach(p => {
+            if(p.ap > 0 || p.fame >= targetFame) { 
+                const container = document.getElementById(`tokens-${p.pos}`);
+                if (container) {
+                    const token = document.createElement('div');
+                    token.className = `token`;
+                    token.style.background = p.color;
+                    token.innerText = p.avatar;
+                    container.appendChild(token);
+                }
+            }
+        });
+    }
+
+    function updateTurnDisplay() {
+        const p = players[currentPlayerIdx];
+        const el = document.getElementById('turn-indicator');
+        
+        if(p.ap <= 0) {
+            nextTurn();
+            return;
+        }
+        
+        el.innerHTML = `👉 輪到 <span style="color:${p.color}">${p.name}</span>`;
+        document.getElementById('roll-btn').disabled = false;
+        updateGameUI();
+    }
+
+    function rollDice() {
+        if (!gameActive) return;
+        document.getElementById('roll-btn').disabled = true;
+        
+        let rolls = 0;
+        let finalRoll = Math.floor(Math.random() * 6) + 1;
+        const diceDisplay = document.getElementById('dice-display');
+        
+        let interval = setInterval(() => {
+            diceDisplay.innerText = Math.floor(Math.random() * 6) + 1;
+            rolls++;
+            if (rolls > 10) {
+                clearInterval(interval);
+                diceDisplay.innerText = finalRoll;
+                setTimeout(() => movePlayer(finalRoll), 500);
+            }
+        }, 50);
+    }
+
+    function movePlayer(steps) {
+        const player = players[currentPlayerIdx];
+        let oldPos = player.pos;
+        player.pos = (player.pos + steps) % boardData.length;
+        
+        // 經過起點公會給予補給
+        if (player.pos < oldPos) {
+            const recovery = parseInt(document.getElementById('camp-ap-recovery').value) || 0;
+            if(recovery > 0) {
+                player.ap += recovery;
+                showMsg(`⛺ 返抵公會邊緣！小隊獲得精力補給，AP 恢復 ${recovery} 點！`);
+            }
+        }
+
+        updatePlayerTokens();
+        setTimeout(() => handleCell(), 600);
+    }
+
+    function handleCell() {
+        const player = players[currentPlayerIdx];
+        const cell = boardData[player.pos];
+
+        if (cell.type === 'start') {
+            showMsg("⛺ 進入公會大廳歇息，整理行囊。");
+            setTimeout(endPlayerAction, 1500);
+        } else if (cell.type === 'normal') {
+            document.getElementById('modal-char').innerText = cell.content;
+            
+            // 判斷此格是否為懸賞單指定討伐目標
+            let targetBounties = activeBounties.filter(b => b.type === 'target' && b.targetIdx === player.pos);
+            const titleEl = document.getElementById('action-title');
+            const descEl = document.getElementById('modal-desc');
+
+            // 挑戰情境文字
+            const mode = document.getElementById('challenge-mode').value;
+            if(mode === 'idiom') {
+                descEl.innerText = `請大聲唸出一個包含【${cell.content}】字的四字成語！`;
+            } else if(mode === 'sentence') {
+                descEl.innerText = `請用包含【${cell.content}】字的情境，現場即興造出完整句子！`;
+            } else {
+                descEl.innerText = `請大聲唸出包含【${cell.content}】字的正確認讀詞彙造詞！`;
+            }
+
+            if (targetBounties.length > 0) {
+                titleEl.innerHTML = "🎯 遭遇指定懸賞討伐魔物！";
+                titleEl.style.color = "var(--highlight)";
+            } else {
+                titleEl.innerHTML = "✨ 發現古代生字能量節點";
+                titleEl.style.color = "var(--gold)";
+            }
+            
+            document.getElementById('action-modal').style.display = 'flex';
+        }
+    }
+
+    function confirmAction(isActing) {
+        document.getElementById('action-modal').style.display = 'none';
+        const player = players[currentPlayerIdx];
+        const cell = boardData[player.pos];
+
+        if (isActing) {
+            if (player.ap <= 0) {
+                showMsg("小隊行動力 AP 不足！");
+            } else {
+                player.ap--;
+                
+                // 檢查是否完成了討伐地標任務
+                let bIndex = activeBounties.findIndex(b => b.type === 'target' && b.targetIdx === player.pos);
+                if (bIndex !== -1) {
+                    let reward = activeBounties[bIndex].reward;
+                    player.fame += reward;
+                    showMsg(`⚔️ 討伐奇襲成功！${player.name} 直接斬獲 ${reward} 聲望！`, 3000);
+                    
+                    // 特效：原地彈出聲望漂浮文字
+                    const cellRect = document.getElementById(`cell-${player.pos}`).getBoundingClientRect();
+                    createFloatingText(`+${reward} 聲望`, cellRect.left + cellRect.width/2 - 30, cellRect.top + window.scrollY);
+                    
+                    // 拔除該懸賞並刷新
+                    activeBounties.splice(bIndex, 1);
+                    spawnBounty();
+                    renderBounties();
+                    renderBoard(); // 刷新地圖移除 🎯 亮框
+                } else {
+                    // 一般格子採集
+                    player.strokes += cell.strokes;
+                    player.words.push(cell.content);
+                    showMsg(`⛏️ 採集成功！注入背包 ${cell.strokes} 點能量與字元「${cell.content}」`);
+                }
+            }
+        } else {
+            showMsg("🛡️ 選擇按兵不動，保留團隊戰術體力。");
+        }
+        
+        updateGameUI();
+        setTimeout(endPlayerAction, 1800);
+    }
+
+    function endPlayerAction() {
+        const player = players[currentPlayerIdx];
+        // 採集結束，觸發自動背包比對與繳交任務
+        checkBountiesAuto(player);
+        
+        setTimeout(() => {
+            if (checkGameEnd()) return;
+            nextTurn();
+        }, 1000);
+    }
+
+    function checkGameEnd() {
+        const hasWinner = players.some(p => p.fame >= targetFame);
+        const allOutOfAP = players.every(p => p.ap <= 0);
+        const turnLimitReached = currentTurnCount > globalMaxTurns;
+        
+        if (hasWinner || allOutOfAP || turnLimitReached) {
+            let reason = 'fame';
+            if (turnLimitReached) reason = 'turn';
+            else if (allOutOfAP) reason = 'ap';
+            
+            endGame(reason);
+            return true;
+        }
+        return false;
+    }
+
+    function endGame(reason) {
+        gameActive = false;
+        const modal = document.getElementById('end-modal');
+        const display = document.getElementById('winner-display');
+        
+        // 排序尋找積分声望王者
+        let sortedPlayers = [...players].sort((a, b) => b.fame - a.fame);
+        let winner = sortedPlayers[0];
+        
+        let html = `<div style="text-align:center; font-size:24px; color:var(--gold); margin-bottom:15px; font-weight:bold;">`;
+        if (reason === 'fame') {
+            html += `🎉 戰役大捷！${winner.avatar} ${winner.name} 率先達成 ${targetFame} 聲望，晉升傳奇冒險家！`;
+        } else if (reason === 'turn') {
+            html += `⏳ 戰局圈數全數用盡！由最高聲望者 ${winner.avatar} ${winner.name} 取得公會榮譽首位！`;
+        } else {
+            html += `⛺ 所有人體力耗盡。${winner.avatar} ${winner.name} 以優異懸賞表現勝出！`;
+        }
+        html += `</div><hr style="border-color:#544135; margin-bottom:15px;">`;
+        
+        sortedPlayers.forEach((p, idx) => {
+            html += `
+            <div style="display:flex; justify-content:space-between; margin:10px 0; font-size:18px; padding:10px; background:rgba(0,0,0,0.4); border-radius:8px; border: 1px solid ${p.color};">
+                <span>${idx === 0 ? '👑' : '&nbsp;&nbsp;&nbsp;'} <span style="color:${p.color}">${p.avatar} ${p.name}</span></span>
+                <span style="color:var(--gold); font-weight:bold;">${p.fame} 聲望分 (背包剩餘 ${p.words.length} 字)</span>
+            </div>`;
+        });
+        
+        display.innerHTML = html;
+        modal.style.display = 'flex';
+    }
+
+    function nextTurn() {
+        if (checkGameEnd()) return;
+
+        currentPlayerIdx++;
+        
+        // 當所有人走完一輪，算過了一圈
+        if (currentPlayerIdx >= players.length) {
+            currentPlayerIdx = 0;
+            currentTurnCount++;
+        }
+        
+        if (!checkGameEnd()) {
+            updateTurnDisplay();
+        }
+    }
+</script>
+</body>
+</html>
