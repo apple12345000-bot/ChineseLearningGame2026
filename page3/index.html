@@ -163,7 +163,24 @@
             <div class="setup-group">
                 <div class="setup-title">📜 2. 戰場高級設定</div>
                 <div class="setting-row" style="width: 100%;">
-                    <label style="width: 100%;">輸入戰場節點 (本課生字)：
+                    <label style="width: 100%; display:block; margin-bottom:12px; color: var(--gold); font-weight: bold;">📚 選擇課別 (從題庫載入)：
+                    <select id="lesson-select" style="width:100%; box-sizing: border-box; margin-top:5px; background: rgba(0,0,0,0.5); color: white; border: 1px solid #544135; padding: 8px; font-size: 16px; border-radius: 4px;">
+                        <option value="">-- 請選擇課別 (或直接在下方自行輸入) --</option>
+                        <option value="lesson1">第一課</option>
+                        <option value="lesson2">第二課</option>
+                        <option value="lesson3">第三課</option>
+                        <option value="lesson4">第四課</option>
+                        <option value="lesson5">第五課</option>
+                        <option value="lesson6">第六課</option>
+                        <option value="lesson7">第七課</option>
+                        <option value="lesson8">第八課</option>
+                        <option value="lesson9">第九課</option>
+                        <option value="lesson10">第十課</option>
+                        <option value="lesson11">第十一課</option>
+                        <option value="lesson12">第十二課</option>
+                    </select>
+                </label>
+                <label style="width: 100%;"> ✍️ 輸入戰場節點 (自行修改或載入)：
                         <input type="text" id="word-input" placeholder="請輸入本課生字，例如：員社教導演..." style="width:100%; box-sizing: border-box; margin-top:5px;">
                     </label>
                     <div class="quick-tags">
@@ -925,6 +942,34 @@
             updateTurnDisplay();
         }
     }
+</script>
+
+<script>
+// --- 新增：讀取 JSON 題庫邏輯 ---
+(function setupLessonSelect() {
+    const lessonSelect = document.getElementById('lesson-select');
+    const wordInput = document.getElementById('word-input');
+    if (lessonSelect && wordInput) {
+        lessonSelect.addEventListener('change', function() {
+            const selectedLesson = this.value;
+            if (!selectedLesson) return;
+            
+            fetch('../words.json')
+                .then(response => {
+                    if (!response.ok) throw new Error("找不到 words.json");
+                    return response.json();
+                })
+                .then(data => {
+                    if (data[selectedLesson]) {
+                        wordInput.value = data[selectedLesson].join('');
+                    }
+                })
+                .catch(error => {
+                    console.error('讀取生字庫失敗:', error);
+                });
+        });
+    }
+})();
 </script>
 </body>
 </html>
