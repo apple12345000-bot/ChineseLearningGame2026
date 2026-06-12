@@ -39,7 +39,7 @@
     .setting-row label { flex: 1 1 45%; min-width: 0; margin-bottom: 2%; }
     .setting-row input[type="number"], .setting-row input[type="text"], .setting-row select { padding: 8px; border-radius: 4px; border: 1px solid var(--ui-border); background: #0b0914; color: white; font-size: 15px; width: 100%; box-sizing: border-box; margin-top: 5px; }
     
-    .info-box { background: rgba(255, 71, 87, 0.05); border-left: 4px solid var(--boss-color); padding: 4%; font-size: clamp(0.85em, 2.5vw, 0.95em); margin-top: 3%; border-radius: 0 8px 8px 0; line-height: 1.6; color: #dcdde1; border-top: 1px solid rgba(255, 71, 87, 0.2); border-bottom: 1px solid rgba(255, 71, 87, 0.2); border-right: 1px solid rgba(255, 71, 87, 0.2); }
+    .info-box { background: rgba(255, 71, 87, 0.05); border-left: 4px solid var(--boss-color); padding: 4%; font-size: clamp(0.85em, 2.5vw, 0.95em); margin-top: 3%; border-radius: 0 8px 8px 0; line-height: 1.6; color: #dcdde1; border-top: 1px solid rgba(255,71,87,0.2); border-bottom: 1px solid rgba(255,71,87,0.2); border-right: 1px solid rgba(255,71,87,0.2); }
     .info-box h3 { margin-top: 0; color: var(--gold); font-size: 1.1em; margin-bottom: 8px; }
 
     .btn { background: linear-gradient(135deg, #8e44ad, #5e3370); color: white; border: 2px solid #9b59b6; padding: 12px 5%; font-size: clamp(14px, 3vw, 16px); font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.5); text-shadow: 1px 1px 2px #000; box-sizing: border-box; text-align: center; }
@@ -146,19 +146,27 @@
         <div class="setup-group">
             <div class="setup-title">📜 2. 討伐卷軸與魔王設定</div>
             <div class="setting-row">
-                <label style="flex: 100%;">選擇封印卷軸 (課次生字)：
-                    <select id="word-lesson-select" onchange="toggleManualInput()">
-                        <option value="">載入字庫中...</option>
+                <label style="width: 100%; display:block; margin-bottom:12px; color: var(--gold); font-weight: bold;">📚 選擇課別 (從題庫載入)：
+                    <select id="lesson-select" style="width:100%; box-sizing: border-box; margin-top:5px; background: rgba(0,0,0,0.5); color: white; border: 1px solid #544135; padding: 8px; font-size: 16px; border-radius: 4px;">
+                        <option value="">-- 請選擇課別 (或直接在下方自行輸入) --</option>
+                        <option value="lesson1">第一課</option>
+                        <option value="lesson2">第二課</option>
+                        <option value="lesson3">第三課</option>
+                        <option value="lesson4">第四課</option>
+                        <option value="lesson5">第五課</option>
+                        <option value="lesson6">第六課</option>
+                        <option value="lesson7">第七課</option>
+                        <option value="lesson8">第八課</option>
+                        <option value="lesson9">第九課</option>
+                        <option value="lesson10">第十課</option>
+                        <option value="lesson11">第十一課</option>
+                        <option value="lesson12">第十二課</option>
                     </select>
                 </label>
-            </div>
-            
-            <div class="setting-row" id="manual-word-input-container" style="display: none;">
-                <label style="flex: 100%; color: var(--gold);">✍️ 自訂咒語 (請手動輸入生字)：
-                    <input type="text" id="word-input" placeholder="請將生字連在一起輸入，例如：員社教導演..." style="border-color: var(--gold);">
+                <label style="flex: 100%;"> ✍️ 輸入封印咒語 (自行修改或載入)：
+                    <input type="text" id="word-input" placeholder="請輸入本課生字，例如：員社教導演...">
                 </label>
             </div>
-
             <div class="setting-row">
                 <label>👿 魔王稱號：<input type="text" id="boss-name-input" value="混沌魔王 奧米加"></label>
                 <label>初始體力 (AP)：<input type="number" id="initial-ap" value="15" min="5" max="50"></label>
@@ -326,6 +334,7 @@
     let boss = { maxHp: 3200, hp: 3200, name: "混沌魔王 奧米加" };
     let currentPlayerIdx = 0, gameActive = false;
     
+    // 遊戲全域動態配置 (沙盒參數)
     let config = {
         itemMode: 'manual',
         itemLevel: 2,
@@ -338,52 +347,6 @@
         reviveAP: 10,
         scrollAP: 5
     };
-
-    let wordDatabase = null;
-
-    // 非同步載入外部 word.json 資料庫
-    async function loadWordDatabase() {
-        const selectEl = document.getElementById('word-lesson-select');
-        try {
-            const response = await fetch('word.json'); 
-            wordDatabase = await response.json();
-            
-            selectEl.innerHTML = '';
-            
-            Object.keys(wordDatabase).forEach((lessonKey, index) => {
-                const option = document.createElement('option');
-                option.value = lessonKey;
-                // 支援 JSON 屬性名為 "第一課" 或直接顯示陣列長度
-                const count = wordDatabase[lessonKey].length;
-                option.innerText = `📚 ${lessonKey} (共 ${count} 個生字)`;
-                selectEl.appendChild(option);
-            });
-        } catch (error) {
-            console.warn('未偵測到 word.json 或載入失敗，已切換至純手動輸入模式。');
-            selectEl.innerHTML = '';
-        } finally {
-            // 無論資料庫是否存在，都在最下方增加「自行輸入」選項
-            const manualOption = document.createElement('option');
-            manualOption.value = 'MANUAL_INPUT';
-            manualOption.innerText = '✍️ 自行輸入生字設定...';
-            selectEl.appendChild(manualOption);
-            
-            // 預設選取第一個選項並觸發顯示判定
-            selectEl.selectedIndex = 0;
-            toggleManualInput();
-        }
-    }
-
-    // 控制手動輸入欄位的顯示與隱藏
-    function toggleManualInput() {
-        const selectValue = document.getElementById('word-lesson-select').value;
-        const container = document.getElementById('manual-word-input-container');
-        if (selectValue === 'MANUAL_INPUT') {
-            container.style.display = 'flex';
-        } else {
-            container.style.display = 'none';
-        }
-    }
 
     function getDynamicItemPool() {
         return [
@@ -506,10 +469,8 @@
         }
     ];
 
-    // 初始化 UI 與字庫載入
     (function initUI() {
         generatePlayerInputs();
-        loadWordDatabase();
     })();
 
     function generatePlayerInputs() {
@@ -531,6 +492,7 @@
             Object.values(CLASSES).forEach(c => { classSelect += `<option value="${c.id}">${c.icon} ${c.name}</option>`; });
             classSelect += `</select>`;
 
+            // 新增顏色選取器
             group.innerHTML = `
                 <input type="color" id="p-color-${i}" value="${colorVal}" title="選擇專屬代表色">
                 ${avatarSelect}
@@ -582,20 +544,8 @@
     }
 
     function prepareGame() {
-        const selectedLesson = document.getElementById('word-lesson-select').value;
-        let input = "";
-
-        // 判斷生字來源：自訂輸入或是資料庫課次
-        if (selectedLesson === 'MANUAL_INPUT') {
-            input = document.getElementById('word-input').value.trim();
-        } else if (wordDatabase && wordDatabase[selectedLesson]) {
-            input = wordDatabase[selectedLesson].join(''); 
-        }
-        
-        if (!input) { 
-            alert("請選擇課次或手動輸入生字咒語！"); 
-            return; 
-        }
+        const input = document.getElementById('word-input').value.trim();
+        if (!input) { alert("請輸入本課生字！"); return; }
         
         // 讀取進階設定
         config.itemMode = document.getElementById('cfg-item-mode').value;
@@ -608,6 +558,7 @@
         config.skipCost = parseInt(document.getElementById('cfg-skip-cost').value);
         config.dmgMult = parseInt(document.getElementById('cfg-dmg-mult').value);
         
+        // 根據 Level 設定道具威力
         config.reviveAP = config.itemLevel === 1 ? 5 : (config.itemLevel === 2 ? 10 : 20);
         config.scrollAP = config.itemLevel === 1 ? 2 : (config.itemLevel === 2 ? 5 : 10);
 
@@ -626,7 +577,7 @@
                 name: document.getElementById(`p-name-${i}`).value.trim() || `勇者 ${i+1}`, 
                 avatar: document.getElementById(`p-avatar-${i}`).value,
                 pClass: CLASSES[classId],
-                color: document.getElementById(`p-color-${i}`).value,
+                color: document.getElementById(`p-color-${i}`).value, // 讀取自訂顏色
                 pos: 0, 
                 ap: initialAP, 
                 dmgDealt: 0,
@@ -644,13 +595,16 @@
             try { strokes = cnchar.stroke(char) || 10; } catch(e) {}
             boardData.push({ type: 'normal', content: char, strokes: strokes });
             
+            // 使用自訂的頻率生成地圖
             if (index > 0) {
                 if (index % config.healFreq === 0) boardData.push({ type: 'heal', content: '💧', strokes: 0 });
                 if (index % config.eventFreq === 0) boardData.push({ type: 'event', content: '❓', strokes: 0 });
             }
         });
 
+        // 更新 UI 提示文字
         document.getElementById('skip-btn-text').innerText = config.skipCost > 0 ? `🛡️ 放棄攻擊 (耗 ${config.skipCost} AP)` : "🛡️ 放棄攻擊 (無消耗)";
+
         document.getElementById('boss-name-display').innerText = `👿 ${boss.name}`;
         document.getElementById('setup-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'flex';
@@ -687,6 +641,7 @@
             if(p.buff_double_damage) statusTags += `<div style="font-size:12px; color:#f1c40f; text-align:right;">🔥 狂暴狀態(雙倍傷)</div>`;
             if(config.undyingWill && !p.undying_used && p.ap > 0) statusTags += `<div style="font-size:12px; color:#2ecc71; text-align:right;">🛡️ 不死意志(準備中)</div>`;
             
+            // 職業徽章採用主色調搭配
             div.innerHTML = `
                 <div class="player-header">
                     <div class="player-avatar-disp token" style="background:${p.color}; border:none;">${p.avatar}</div>
@@ -885,7 +840,7 @@
             let healAmount = config.baseHeal;
             let msg = `💧 暢飲治癒泉水！恢復 ${healAmount} 點 AP！`;
             if (player.pClass.id === 'mage') {
-                healAmount *= 2;
+                healAmount *= 2; // 法師翻倍
                 msg = `🧙‍♂️ 觸發【魔力湧動】！泉水魔能翻倍，共恢復 ${healAmount} 點 AP！`;
             }
             player.ap += healAmount;
@@ -938,7 +893,7 @@
             } else {
                 let apMsg = loseAP(player, 1);
                 
-                let damage = cell.strokes * config.dmgMult;
+                let damage = cell.strokes * config.dmgMult; // 動態倍率
                 let msgs = [`詠唱成功！基礎傷 ${damage}`];
 
                 if (player.pClass.id === 'warrior') {
@@ -964,6 +919,7 @@
                 createDamageText(damage);
             }
         } else {
+            // 放棄攻擊判定是否扣除 AP
             if (config.skipCost > 0) {
                 let apMsg = loseAP(player, config.skipCost);
                 showMsg(`🛡️ 放棄攻擊，受懲罰扣除 ${config.skipCost} 點 AP。${apMsg}`);
@@ -1063,6 +1019,34 @@
         dmgBoard.innerHTML = boardHtml;
         modal.style.display = 'flex';
     }
+</script>
+
+<script>
+// --- 新增：讀取 JSON 題庫邏輯 ---
+(function setupLessonSelect() {
+    const lessonSelect = document.getElementById('lesson-select');
+    const wordInput = document.getElementById('word-input');
+    if (lessonSelect && wordInput) {
+        lessonSelect.addEventListener('change', function() {
+            const selectedLesson = this.value;
+            if (!selectedLesson) return;
+            
+            fetch('../words.json')
+                .then(response => {
+                    if (!response.ok) throw new Error("找不到 words.json");
+                    return response.json();
+                })
+                .then(data => {
+                    if (data[selectedLesson]) {
+                        wordInput.value = data[selectedLesson].join('');
+                    }
+                })
+                .catch(error => {
+                    console.error('讀取生字庫失敗:', error);
+                });
+        });
+    }
+})();
 </script>
 </body>
 </html>
